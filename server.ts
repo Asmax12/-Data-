@@ -238,6 +238,64 @@ Return strictly JSON matching this structure:
   }
 });
 
+// API Route: DataMate Investigator ("افهم الرقم" / "اسألني ليه؟")
+app.post('/api/ai/investigate', async (req, res) => {
+  try {
+    const { subject, localAnalysis, dataSummary, language = 'ar' } = req.body;
+    const ai = getGeminiClient();
+
+    if (!ai) {
+      return res.status(503).json({
+        success: false,
+        fallback: true,
+        friendlyMessage: 'التحليل الذكي غير متاح مؤقتًا، وتم عرض التحليل الإحصائي القائم على بياناتك بدقة.',
+      });
+    }
+
+    const prompt = `You are DataMate Investigator ("محقق الأرقام").
+Your mission is to explain WHY this specific number or metric exists, not just state what it is.
+The user clicked "افهم الرقم" (Understand the number) for:
+Subject: "${subject.title}" (Type: ${subject.type}, Value: ${subject.formattedValue || subject.currentValue})
+
+Statistical evidence discovered by local analytics:
+- What is happening: ${localAnalysis.summaryWhat}
+- Key drivers: ${JSON.stringify(localAnalysis.summaryWhy, null, 2)}
+- Evidence breakdown: ${JSON.stringify(localAnalysis.evidence, null, 2)}
+- Recommendation: ${localAnalysis.recommendation}
+
+Dataset context:
+${JSON.stringify(dataSummary, null, 2)}
+
+Provide a sharp, natural, evidence-based business investigation in ${language === 'ar' ? 'warm, professional Arabic (no complex statistical jargon, practical and friendly)' : 'clear, insightful English'}.
+
+Strictly return JSON:
+{
+  "summaryWhat": "1-2 sentences clearly describing what is observed in this number",
+  "summaryWhy": [
+    "Cause 1 with real numbers/evidence from the data",
+    "Cause 2 with comparison or concentration factor",
+    "Cause 3 (e.g. basket size, trend, or customer behavior)"
+  ],
+  "recommendation": "1-2 sentences giving practical, high-value advice on what the owner should do next",
+  "keyTakeaway": "Short memorable punchline"
+}
+`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const result = JSON.parse(response.text || '{}');
+    return res.json({ success: true, ...result });
+  } catch (err: any) {
+    return handleAIError(err, res);
+  }
+});
+
 // Vite or Static file serving
 async function setupServer() {
   if (process.env.NODE_ENV !== 'production') {

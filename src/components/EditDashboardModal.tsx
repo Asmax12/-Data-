@@ -19,6 +19,7 @@ import {
 import { CleanedDataset, KPIItem, ChartConfig, DataRow, ColumnMeta } from '../types';
 import { processAndCleanData } from '../utils/dataParser';
 import { generateKPIs, generateCharts, generateInsights } from '../utils/analyticsEngine';
+import { useTheme } from '../context/ThemeContext';
 
 interface EditDashboardModalProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const { theme } = useTheme();
   const isAr = language === 'ar';
   const [activeTab, setActiveTab] = useState<'data' | 'charts' | 'kpis' | 'ai'>('data');
 
@@ -224,18 +226,36 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-xs animate-fade-in no-print">
-      <div className="bg-white rounded-2xl border border-[#B9A3D4]/40 shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+      <div
+        className="rounded-2xl border shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+        style={{
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+        }}
+      >
         {/* Top Header */}
-        <div className="px-6 py-5 border-b border-[#B9A3D4]/30 flex items-center justify-between bg-[#FFF9F2]/70">
+        <div
+          className="px-6 py-5 border-b flex items-center justify-between"
+          style={{
+            backgroundColor: theme.colors.surfaceSecondary,
+            borderColor: theme.colors.border,
+          }}
+        >
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-[#4B315F] text-[#FFF9F2] flex items-center justify-center shrink-0 shadow-2xs">
-              <Edit2 className="w-5 h-5 text-[#F4A261]" />
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
+              style={{
+                backgroundColor: theme.colors.primary,
+                color: '#FFF9F2',
+              }}
+            >
+              <Edit2 className="w-5 h-5" style={{ color: theme.colors.secondary }} />
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-[#4B315F]">
+              <h2 className="text-xl sm:text-2xl font-black" style={{ color: theme.colors.primary }}>
                 {isAr ? 'تعديل البيانات ولوحة التحكم' : 'Edit Data & Dashboard'}
               </h2>
-              <p className="text-sm sm:text-base text-[#29232D]/75 font-medium mt-0.5">
+              <p className="text-sm sm:text-base font-medium mt-0.5" style={{ color: `${theme.colors.textPrimary}B8` }}>
                 {isAr
                   ? 'عدّل السجلات، صحح القيم، أضف أعمدة، أو خصص المخططات والمؤشرات'
                   : 'Edit records, correct values, manage columns, and customize charts'}
@@ -246,14 +266,19 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
           <div className="flex items-center gap-2.5">
             <button
               onClick={handleCommit}
-              className="px-5 py-2.5 text-base font-bold rounded-xl bg-[#4B315F] text-[#FFF9F2] hover:bg-[#4B315F]/90 transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 text-base font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+              style={{
+                backgroundColor: theme.colors.primary,
+                color: '#FFF9F2',
+              }}
             >
-              <Save className="w-4.5 h-4.5 text-[#F4A261]" />
+              <Save className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
               <span>{isAr ? 'حفظ وتحديث الداشبورد' : 'Save & Update'}</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-white text-[#29232D]/60 hover:text-[#29232D] cursor-pointer"
+              className="p-2 rounded-xl hover:bg-black/5 cursor-pointer"
+              style={{ color: `${theme.colors.textPrimary}99` }}
             >
               <X className="w-6 h-6" />
             </button>
@@ -261,29 +286,41 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 px-6 pt-3.5 border-b border-[#B9A3D4]/20 bg-white text-base overflow-x-auto">
+        <div
+          className="flex items-center gap-2 px-6 pt-3.5 border-b text-base overflow-x-auto"
+          style={{
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+          }}
+        >
           <button
             onClick={() => setActiveTab('data')}
-            className={`pb-3 px-4 font-bold transition-colors flex items-center gap-2 border-b-2 cursor-pointer ${
-              activeTab === 'data'
-                ? 'border-[#4B315F] text-[#4B315F]'
-                : 'border-transparent text-[#29232D]/70 hover:text-[#29232D]'
-            }`}
+            className="pb-3 px-4 font-bold transition-colors flex items-center gap-2 border-b-2 cursor-pointer"
+            style={{
+              borderColor: activeTab === 'data' ? theme.colors.primary : 'transparent',
+              color: activeTab === 'data' ? theme.colors.primary : `${theme.colors.textPrimary}99`,
+            }}
           >
             <Table className="w-4.5 h-4.5" />
             <span>{isAr ? 'تعديل السجلات والبيانات' : 'Edit Rows & Columns'}</span>
-            <span className="text-xs bg-[#FFF9F2] px-2.5 py-0.5 rounded-full font-mono font-bold">
+            <span
+              className="text-xs px-2.5 py-0.5 rounded-full font-mono font-bold"
+              style={{
+                backgroundColor: theme.colors.background,
+                color: theme.colors.primary,
+              }}
+            >
               {editableRows.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('charts')}
-            className={`pb-3 px-4 font-bold transition-colors flex items-center gap-2 border-b-2 cursor-pointer ${
-              activeTab === 'charts'
-                ? 'border-[#4B315F] text-[#4B315F]'
-                : 'border-transparent text-[#29232D]/70 hover:text-[#29232D]'
-            }`}
+            className="pb-3 px-4 font-bold transition-colors flex items-center gap-2 border-b-2 cursor-pointer"
+            style={{
+              borderColor: activeTab === 'charts' ? theme.colors.primary : 'transparent',
+              color: activeTab === 'charts' ? theme.colors.primary : `${theme.colors.textPrimary}99`,
+            }}
           >
             <BarChart2 className="w-4.5 h-4.5" />
             <span>{isAr ? 'المخططات والرسوم' : 'Charts & Graphs'}</span>
@@ -291,11 +328,11 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
 
           <button
             onClick={() => setActiveTab('kpis')}
-            className={`pb-3 px-4 font-bold transition-colors flex items-center gap-2 border-b-2 cursor-pointer ${
-              activeTab === 'kpis'
-                ? 'border-[#4B315F] text-[#4B315F]'
-                : 'border-transparent text-[#29232D]/70 hover:text-[#29232D]'
-            }`}
+            className="pb-3 px-4 font-bold transition-colors flex items-center gap-2 border-b-2 cursor-pointer"
+            style={{
+              borderColor: activeTab === 'kpis' ? theme.colors.primary : 'transparent',
+              color: activeTab === 'kpis' ? theme.colors.primary : `${theme.colors.textPrimary}99`,
+            }}
           >
             <LayoutGrid className="w-4.5 h-4.5" />
             <span>{isAr ? 'كروت المؤشرات (KPIs)' : 'KPI Cards'}</span>
@@ -303,13 +340,13 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
 
           <button
             onClick={() => setActiveTab('ai')}
-            className={`pb-3 px-4 font-bold transition-colors flex items-center gap-2 border-b-2 cursor-pointer ${
-              activeTab === 'ai'
-                ? 'border-[#4B315F] text-[#4B315F]'
-                : 'border-transparent text-[#29232D]/70 hover:text-[#29232D]'
-            }`}
+            className="pb-3 px-4 font-bold transition-colors flex items-center gap-2 border-b-2 cursor-pointer"
+            style={{
+              borderColor: activeTab === 'ai' ? theme.colors.primary : 'transparent',
+              color: activeTab === 'ai' ? theme.colors.primary : `${theme.colors.textPrimary}99`,
+            }}
           >
-            <Sparkles className="w-4.5 h-4.5 text-[#F4A261]" />
+            <Sparkles className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
             <span>{isAr ? 'تعديل بالأوامر الصوتية أو النص' : 'AI Edit'}</span>
           </button>
         </div>
@@ -320,12 +357,22 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
           {activeTab === 'data' && (
             <div className="space-y-5">
               {/* Controls bar: Add row, add column */}
-              <div className="flex flex-wrap items-center justify-between gap-3.5 bg-[#FFF9F2] p-4 rounded-xl border border-[#B9A3D4]/30">
+              <div
+                className="flex flex-wrap items-center justify-between gap-3.5 p-4 rounded-xl border"
+                style={{
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.border,
+                }}
+              >
                 <button
                   onClick={handleAddRow}
-                  className="px-4 py-2 text-sm sm:text-base font-bold rounded-xl bg-[#4B315F] text-[#FFF9F2] hover:bg-[#4B315F]/90 flex items-center gap-2 cursor-pointer shadow-2xs"
+                  className="px-4 py-2 text-sm sm:text-base font-bold rounded-xl flex items-center gap-2 cursor-pointer shadow-2xs"
+                  style={{
+                    backgroundColor: theme.colors.primary,
+                    color: '#FFF9F2',
+                  }}
                 >
-                  <Plus className="w-4 h-4 text-[#F4A261]" />
+                  <Plus className="w-4 h-4" style={{ color: theme.colors.secondary }} />
                   <span>{isAr ? '+ إضافة صف جديد' : '+ Add New Row'}</span>
                 </button>
 
@@ -336,19 +383,34 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                     placeholder={isAr ? 'اسم العمود الجديد...' : 'New column name...'}
                     value={newColumnName}
                     onChange={(e) => setNewColumnName(e.target.value)}
-                    className="px-3.5 py-2 text-sm bg-white border border-[#B9A3D4]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#4B315F] font-medium"
+                    className="px-3.5 py-2 text-sm rounded-xl focus:outline-none focus:ring-1 font-medium border"
+                    style={{
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.border,
+                      color: theme.colors.textPrimary,
+                    }}
                   />
                   <input
                     type="text"
                     placeholder={isAr ? 'القيمة الافتراضية' : 'Default value'}
                     value={newColumnDefault}
                     onChange={(e) => setNewColumnDefault(e.target.value)}
-                    className="w-32 px-3.5 py-2 text-sm bg-white border border-[#B9A3D4]/40 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#4B315F] font-medium"
+                    className="w-32 px-3.5 py-2 text-sm rounded-xl focus:outline-none focus:ring-1 font-medium border"
+                    style={{
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.border,
+                      color: theme.colors.textPrimary,
+                    }}
                   />
                   <button
                     onClick={handleAddColumn}
                     disabled={!newColumnName.trim()}
-                    className="px-4 py-2 text-sm font-bold rounded-xl bg-white border border-[#B9A3D4]/50 text-[#4B315F] hover:bg-[#FFF9F2] disabled:opacity-40 cursor-pointer shadow-2xs"
+                    className="px-4 py-2 text-sm font-bold rounded-xl border disabled:opacity-40 cursor-pointer shadow-2xs"
+                    style={{
+                      backgroundColor: theme.colors.surface,
+                      borderColor: theme.colors.border,
+                      color: theme.colors.primary,
+                    }}
                   >
                     {isAr ? 'إضافة عمود' : 'Add Column'}
                   </button>
@@ -356,9 +418,19 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
               </div>
 
               {/* Editable Grid */}
-              <div className="border border-[#B9A3D4]/40 rounded-xl overflow-x-auto shadow-2xs">
+              <div
+                className="border rounded-xl overflow-x-auto shadow-2xs"
+                style={{ borderColor: theme.colors.border }}
+              >
                 <table className="w-full text-right text-sm">
-                  <thead className="bg-[#FFF9F2] text-[#4B315F] font-bold border-b border-[#B9A3D4]/30">
+                  <thead
+                    className="font-bold border-b"
+                    style={{
+                      backgroundColor: theme.colors.surfaceSecondary,
+                      borderColor: theme.colors.border,
+                      color: theme.colors.primary,
+                    }}
+                  >
                     <tr>
                       <th className="px-3.5 py-3 w-12 text-center text-sm">#</th>
                       {editableColumns.map((col) => (
@@ -369,7 +441,12 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                                 type="text"
                                 value={editingColLabel}
                                 onChange={(e) => setEditingColLabel(e.target.value)}
-                                className="px-2.5 py-1 text-sm bg-white border border-[#4B315F] rounded-lg font-normal"
+                                className="px-2.5 py-1 text-sm rounded-lg font-normal border"
+                                style={{
+                                  backgroundColor: theme.colors.surface,
+                                  borderColor: theme.colors.primary,
+                                  color: theme.colors.textPrimary,
+                                }}
                                 autoFocus
                               />
                               <button
@@ -394,7 +471,7 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                               <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100">
                                 <button
                                   onClick={() => handleDeleteColumn(col.key)}
-                                  className="text-[#E76F7A] hover:opacity-80 p-0.5 cursor-pointer"
+                                  className="text-rose-500 hover:opacity-80 p-0.5 cursor-pointer"
                                   title={isAr ? 'حذف هذا العمود' : 'Delete column'}
                                 >
                                   <X className="w-3.5 h-3.5" />
@@ -407,10 +484,16 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                       <th className="px-3.5 py-3 w-16 text-center text-sm">{isAr ? 'إجراء' : 'Action'}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#B9A3D4]/20">
+                  <tbody
+                    className="divide-y"
+                    style={{ borderColor: theme.colors.border }}
+                  >
                     {editableRows.map((row, rIdx) => (
-                      <tr key={rIdx} className="hover:bg-[#FFF9F2]/40 group">
-                        <td className="px-3 py-2 text-center font-mono text-xs text-[#29232D]/50 font-bold">
+                      <tr key={rIdx} className="hover:bg-black/2 group">
+                        <td
+                          className="px-3 py-2 text-center font-mono text-xs font-bold"
+                          style={{ color: `${theme.colors.textPrimary}80` }}
+                        >
                           {rIdx + 1}
                         </td>
                         {editableColumns.map((col) => (
@@ -419,14 +502,17 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                               type="text"
                               value={row[col.key] !== null ? String(row[col.key]) : ''}
                               onChange={(e) => handleCellChange(rIdx, col.key, e.target.value)}
-                              className="w-full px-2.5 py-1.5 text-sm bg-transparent hover:bg-white focus:bg-white rounded-lg border border-transparent focus:border-[#4B315F] font-mono focus:outline-none transition-colors"
+                              className="w-full px-2.5 py-1.5 text-sm bg-transparent rounded-lg border border-transparent font-mono focus:outline-none transition-colors"
+                              style={{
+                                color: theme.colors.textPrimary,
+                              }}
                             />
                           </td>
                         ))}
                         <td className="px-2 py-1.5 text-center">
                           <button
                             onClick={() => handleDeleteRow(rIdx)}
-                            className="p-1.5 rounded-lg text-[#E76F7A] hover:bg-[#E76F7A]/10 opacity-70 group-hover:opacity-100 cursor-pointer"
+                            className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 opacity-70 group-hover:opacity-100 cursor-pointer"
                             title={isAr ? 'حذف هذا الصف' : 'Delete row'}
                           >
                             <Trash2 className="w-4 h-4" />
@@ -445,10 +531,10 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
             <div className="space-y-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-[#4B315F]">
+                  <h3 className="text-base sm:text-lg font-bold" style={{ color: theme.colors.primary }}>
                     {isAr ? 'التحكم في الرسوم البيانية وأنواعها:' : 'Manage Dashboard Charts:'}
                   </h3>
-                  <p className="text-sm text-[#29232D]/70 font-medium">
+                  <p className="text-sm font-medium" style={{ color: `${theme.colors.textPrimary}B8` }}>
                     {isAr
                       ? 'يمكنك تغيير نوع المخطط (شريطي، دائري، أو منحنى) أو إخفاء أي رسم'
                       : 'Switch chart types (Bar, Donut, Line) or toggle visibility'}
@@ -462,26 +548,31 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                     key={chart.id}
                     className={`p-5 rounded-2xl border transition-all ${
                       chart.hidden
-                        ? 'bg-slate-50 border-slate-200 opacity-60'
-                        : 'bg-white border-[#B9A3D4]/40 shadow-2xs'
+                        ? 'opacity-60'
+                        : 'shadow-2xs'
                     }`}
+                    style={{
+                      backgroundColor: chart.hidden ? theme.colors.background : theme.colors.surface,
+                      borderColor: theme.colors.border,
+                    }}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="font-bold text-base text-[#29232D]">
+                      <span className="font-bold text-base" style={{ color: theme.colors.textPrimary }}>
                         {isAr ? chart.titleAr : chart.titleEn}
                       </span>
                       <button
                         onClick={() => handleToggleChart(chart.id)}
-                        className="text-sm text-[#4B315F] flex items-center gap-1.5 cursor-pointer font-bold"
+                        className="text-sm flex items-center gap-1.5 cursor-pointer font-bold"
+                        style={{ color: theme.colors.primary }}
                       >
                         {chart.hidden ? (
                           <>
-                            <EyeOff className="w-4 h-4 text-slate-400" />
+                            <EyeOff className="w-4 h-4 opacity-50" />
                             <span>{isAr ? 'مخفي' : 'Hidden'}</span>
                           </>
                         ) : (
                           <>
-                            <Eye className="w-4 h-4 text-[#F4A261]" />
+                            <Eye className="w-4 h-4" style={{ color: theme.colors.secondary }} />
                             <span>{isAr ? 'ظاهر' : 'Visible'}</span>
                           </>
                         )}
@@ -489,18 +580,19 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2 pt-2">
-                      <span className="text-sm text-[#29232D]/70 ml-2 font-medium">
+                      <span className="text-sm ml-2 font-medium" style={{ color: `${theme.colors.textPrimary}99` }}>
                         {isAr ? 'نوع المخطط:' : 'Chart Type:'}
                       </span>
                       {(['bar', 'donut', 'line'] as const).map((t) => (
                         <button
                           key={t}
                           onClick={() => handleChangeChartType(chart.id, t)}
-                          className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg font-bold transition-all cursor-pointer ${
-                            chart.type === t
-                              ? 'bg-[#4B315F] text-[#FFF9F2] shadow-xs'
-                              : 'bg-[#FFF9F2] text-[#29232D]/75 hover:bg-[#B9A3D4]/20'
-                          }`}
+                          className="px-3 py-1.5 text-xs sm:text-sm rounded-lg font-bold transition-all cursor-pointer border"
+                          style={{
+                            backgroundColor: chart.type === t ? theme.colors.primary : theme.colors.background,
+                            color: chart.type === t ? '#FFF9F2' : theme.colors.textPrimary,
+                            borderColor: chart.type === t ? theme.colors.primary : theme.colors.border,
+                          }}
                         >
                           {t === 'bar'
                             ? isAr
@@ -526,10 +618,10 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
           {activeTab === 'kpis' && (
             <div className="space-y-5">
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-[#4B315F]">
+                <h3 className="text-base sm:text-lg font-bold" style={{ color: theme.colors.primary }}>
                   {isAr ? 'اختيار كروت المؤشرات المعروضة في الواجهة:' : 'Select Displayed KPI Cards:'}
                 </h3>
-                <p className="text-sm text-[#29232D]/70 font-medium">
+                <p className="text-sm font-medium" style={{ color: `${theme.colors.textPrimary}B8` }}>
                   {isAr
                     ? 'اضغط على أي مؤشر لتفعيله أو إلغاء عرضه في الداشبورد'
                     : 'Click any KPI to toggle its visibility on the dashboard'}
@@ -545,23 +637,29 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                       onClick={() => handleToggleKPI(kpi.id)}
                       className={`p-4.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
                         isEnabled
-                          ? 'bg-white border-[#4B315F]/40 shadow-2xs'
-                          : 'bg-slate-50 border-slate-200 opacity-50'
+                          ? 'shadow-2xs'
+                          : 'opacity-50'
                       }`}
+                      style={{
+                        backgroundColor: isEnabled ? theme.colors.surface : theme.colors.background,
+                        borderColor: isEnabled ? theme.colors.primary : theme.colors.border,
+                      }}
                     >
                       <div>
-                        <div className="font-bold text-sm sm:text-base text-[#29232D]">
+                        <div className="font-bold text-sm sm:text-base" style={{ color: theme.colors.textPrimary }}>
                           {isAr ? kpi.labelAr : kpi.label}
                         </div>
-                        <div className="text-lg sm:text-xl font-black text-[#4B315F] font-mono mt-1">
+                        <div className="text-lg sm:text-xl font-black font-mono mt-1" style={{ color: theme.colors.primary }}>
                           {kpi.formattedValue}
                         </div>
                       </div>
 
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                          isEnabled ? 'bg-[#4B315F] text-white shadow-xs' : 'bg-slate-200 text-slate-500'
-                        }`}
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{
+                          backgroundColor: isEnabled ? theme.colors.primary : `${theme.colors.textPrimary}20`,
+                          color: isEnabled ? '#FFF9F2' : theme.colors.textPrimary,
+                        }}
                       >
                         {isEnabled ? '✓' : ''}
                       </div>
@@ -575,11 +673,17 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
           {/* TAB 4: NATURAL LANGUAGE EDITING */}
           {activeTab === 'ai' && (
             <div className="space-y-5">
-              <div className="bg-[#FFF9F2] p-5 rounded-2xl border border-[#F4A261]/40">
-                <h3 className="text-base font-bold text-[#4B315F] mb-1">
+              <div
+                className="p-5 rounded-2xl border"
+                style={{
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.border,
+                }}
+              >
+                <h3 className="text-base font-bold mb-1" style={{ color: theme.colors.primary }}>
                   {isAr ? 'عدّل باللغة العادية مباشرة:' : 'Edit with natural language:'}
                 </h3>
-                <p className="text-sm text-[#29232D]/75 mb-3.5 font-medium">
+                <p className="text-sm mb-3.5 font-medium" style={{ color: `${theme.colors.textPrimary}B8` }}>
                   {isAr
                     ? 'يمكنك كتابة طلبك ببساطة وسيقوم المساعد بتطبيقه على الفور'
                     : 'Speak naturally and DataMate executes the changes automatically'}
@@ -599,10 +703,15 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
                       key={idx}
                       onClick={() => handleQuickAiEdit(chip)}
                       disabled={isAiProcessing}
-                      className="text-right p-3 text-sm rounded-xl bg-white border border-[#B9A3D4]/35 hover:border-[#4B315F] text-[#4B315F] font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center justify-between"
+                      className="text-right p-3 text-sm rounded-xl font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center justify-between border"
+                      style={{
+                        backgroundColor: theme.colors.surface,
+                        borderColor: theme.colors.border,
+                        color: theme.colors.primary,
+                      }}
                     >
                       <span>{chip}</span>
-                      <ArrowRight className="w-4 h-4 text-[#F4A261] shrink-0" />
+                      <ArrowRight className="w-4 h-4 shrink-0" style={{ color: theme.colors.secondary }} />
                     </button>
                   ))}
                 </div>
@@ -612,23 +721,38 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#B9A3D4]/30 bg-[#FFF9F2]/60 flex items-center justify-between">
-          <span className="text-sm text-[#29232D]/70 font-mono font-bold">
+        <div
+          className="px-6 py-4 border-t flex items-center justify-between"
+          style={{
+            backgroundColor: theme.colors.surfaceSecondary,
+            borderColor: theme.colors.border,
+          }}
+        >
+          <span className="text-sm font-mono font-bold" style={{ color: `${theme.colors.textPrimary}B0` }}>
             {editableRows.length} {isAr ? 'سجل' : 'rows'} · {editableColumns.length}{' '}
             {isAr ? 'عمود' : 'columns'}
           </span>
           <div className="flex items-center gap-2.5">
             <button
               onClick={onClose}
-              className="px-5 py-2 text-sm sm:text-base font-bold rounded-xl bg-white border border-[#B9A3D4]/50 text-[#29232D] hover:bg-[#FFF9F2] cursor-pointer"
+              className="px-5 py-2 text-sm sm:text-base font-bold rounded-xl border cursor-pointer"
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                color: theme.colors.textPrimary,
+              }}
             >
               {isAr ? 'إلغاء' : 'Cancel'}
             </button>
             <button
               onClick={handleCommit}
-              className="px-6 py-2 text-sm sm:text-base font-bold rounded-xl bg-[#4B315F] text-[#FFF9F2] hover:bg-[#4B315F]/90 transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+              className="px-6 py-2 text-sm sm:text-base font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+              style={{
+                backgroundColor: theme.colors.primary,
+                color: '#FFF9F2',
+              }}
             >
-              <Check className="w-4 h-4 text-[#F4A261]" />
+              <Check className="w-4 h-4" style={{ color: theme.colors.secondary }} />
               <span>{isAr ? 'تطبيق التعديلات' : 'Apply Changes'}</span>
             </button>
           </div>

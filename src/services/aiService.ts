@@ -3,10 +3,13 @@ import {
   ChartConfig,
   InsightItem,
   AIQueryActions,
+  InvestigationSubject,
+  InvestigationResult,
 } from '../types';
 import {
   generateInsights as generateLocalInsights,
   processLocalNaturalQuery,
+  investigateSubjectLocally,
 } from '../utils/analyticsEngine';
 
 // AI Service Status state for graceful limits management
@@ -236,4 +239,74 @@ export async function sendNaturalLanguageQuery(
 
   // Local fallback (100% reliable, zero downtime)
   return localResult;
+}
+
+/**
+ * DataMate Investigator: Understand WHY a number or chart behaves the way it does
+ * Integrates evidence-based local statistics with Gemini business narrative.
+ */
+export async function investigateSubject(
+  subject: InvestigationSubject,
+  dataset: CleanedDataset,
+  language: 'ar' | 'en' = 'ar'
+): Promise<InvestigationResult> {
+  // 1. Immediately calculate deterministic math & evidence locally
+  const localResult = investigateSubjectLocally(subject, dataset, language);
+
+  // 2. Try enriching with Gemini AI for deeper business causality
+  try {
+    const res = await fetch('/api/ai/investigate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject,
+        localAnalysis: {
+          summaryWhat: localResult.summaryWhat,
+          summaryWhy: localResult.summaryWhy,
+          evidence: localResult.evidence,
+          recommendation: localResult.recommendation,
+        },
+        dataSummary: {
+          name: dataset.name,
+          totalRows: dataset.totalRows,
+          columns: dataset.columns.map((c) => ({ key: c.key, role: c.inferredRole, type: c.type })),
+        },
+        language,
+      }),
+    });
+
+    if (res.status === 429) {
+      updateAIStatus({
+        isRateLimited: true,
+        friendlyMessage: language === 'ar' ? AI_FALLBACK_NOTICE_AR : AI_FALLBACK_NOTICE_EN,
+      });
+      return { ...localResult, isAiEnriched: false };
+    }
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success) {
+        clearAIStatusNotice();
+        return {
+          ...localResult,
+          summaryWhat: data.summaryWhat || localResult.summaryWhat,
+          summaryWhy:
+            Array.isArray(data.summaryWhy) && data.summaryWhy.length > 0
+              ? data.summaryWhy
+              : localResult.summaryWhy,
+          recommendation: data.recommendation || localResult.recommendation,
+          isAiEnriched: true,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('[DataMate] AI Investigator service unavailable, serving evidence locally:', err);
+    updateAIStatus({
+      isUnavailable: true,
+      friendlyMessage: language === 'ar' ? AI_FALLBACK_NOTICE_AR : AI_FALLBACK_NOTICE_EN,
+    });
+  }
+
+  // Always return verified local statistical result
+  return { ...localResult, isAiEnriched: false };
 }

@@ -6,6 +6,9 @@ import {
   InsightItem,
   DataRow,
   AIQueryActions,
+  InvestigationSubject,
+  InvestigationResult,
+  InvestigationEvidence,
 } from '../types';
 
 /**
@@ -571,5 +574,262 @@ export function processLocalNaturalQuery(
     reply: `أهم ما يجب ملاحظته في هذه البيانات: ${topInsight ? topInsight.textAr : 'البيانات تشير إلى استقرار عام في المعاملات.'}`,
     directAnswer: topInsight ? topInsight.textAr : undefined,
     actions: {},
+  };
+}
+
+/**
+ * DataMate Investigator: Deterministic, evidence-based driver analysis
+ * Explains WHY numbers behave the way they do based strictly on dataset math.
+ */
+export function investigateSubjectLocally(
+  subject: InvestigationSubject,
+  dataset: CleanedDataset,
+  language: 'ar' | 'en' = 'ar'
+): InvestigationResult {
+  const isAr = language === 'ar';
+  const rows = dataset.rows;
+  const totalRows = rows.length;
+  const cols = dataset.columns;
+
+  const numCols = cols.filter((c) => c.type === 'numeric');
+  const catCols = cols.filter((c) => c.type === 'category' || c.inferredRole === 'dimension');
+  const timeCols = cols.filter((c) => c.type === 'date' || c.inferredRole === 'time');
+
+  // Find targeted metric column
+  let metricCol = numCols.find((c) => c.key === subject.metricKey);
+  if (!metricCol) {
+    metricCol =
+      numCols.find((c) => /إجمالي|sales|مبيعات|مبلغ|amount|total|revenue|ربح|profit/i.test(c.key)) ||
+      numCols[0];
+  }
+
+  // Handle entity / data point investigation (e.g. City = "الرياض")
+  if (subject.type === 'datapoint' && subject.dimensionKey && subject.filterValue) {
+    const dimKey = subject.dimensionKey;
+    const filterVal = subject.filterValue;
+    const matchingRows = rows.filter((r) => String(r[dimKey]) === filterVal);
+    const entityRowsCount = matchingRows.length;
+    const shareOfRows = totalRows > 0 ? Math.round((entityRowsCount / totalRows) * 100) : 0;
+
+    let entitySum = 0;
+    let allSum = 0;
+    if (metricCol) {
+      const mKey = metricCol.key;
+      entitySum = matchingRows.reduce((acc, r) => acc + (Number(r[mKey]) || 0), 0);
+      allSum = rows.reduce((acc, r) => acc + (Number(r[mKey]) || 0), 0);
+    }
+    const shareOfMetric = allSum > 0 ? Math.round((entitySum / allSum) * 100) : shareOfRows;
+    const avgPerOrder = entityRowsCount > 0 ? entitySum / entityRowsCount : 0;
+
+    // Check secondary dimension for this entity (e.g., top products sold in this city)
+    const secondaryCat = catCols.find((c) => c.key !== dimKey);
+    const subBreakdown: Record<string, number> = {};
+    if (secondaryCat && metricCol) {
+      const sKey = secondaryCat.key;
+      const mKey = metricCol.key;
+      matchingRows.forEach((r) => {
+        const val = String(r[sKey] || 'غير محدد');
+        subBreakdown[val] = (subBreakdown[val] || 0) + (Number(r[mKey]) || 0);
+      });
+    }
+
+    const sortedSub = Object.entries(subBreakdown).sort((a, b) => b[1] - a[1]);
+    const topSub = sortedSub[0];
+    const topSubPct = entitySum > 0 && topSub ? Math.round((topSub[1] / entitySum) * 100) : 0;
+
+    const evidence: InvestigationEvidence[] = [
+      {
+        label: isAr ? `حجم مساهمة ${filterVal}` : `Contribution Share`,
+        value: formatMetricNumber(entitySum, true),
+        percentage: shareOfMetric,
+        note: isAr ? `${shareOfMetric}% من الإجمالي العام` : `${shareOfMetric}% of overall total`,
+      },
+      {
+        label: isAr ? 'عدد العمليات المسجلة' : 'Number of Transactions',
+        value: `${entityRowsCount} ${isAr ? 'عملية' : 'orders'}`,
+        percentage: shareOfRows,
+        note: isAr ? `${shareOfRows}% من إجمالي العمليات` : `${shareOfRows}% of total transactions`,
+      },
+      {
+        label: isAr ? 'متوسط قيمة العملية' : 'Avg Order Value',
+        value: formatMetricNumber(avgPerOrder, true),
+        note: isAr ? 'معدل الإنفاق لكل عملية' : 'Average spend per order',
+      },
+    ];
+
+    if (topSub) {
+      evidence.push({
+        label: isAr ? `أعلى تصنيف فرعي (${topSub[0]})` : `Top Sub-segment (${topSub[0]})`,
+        value: formatMetricNumber(topSub[1], true),
+        percentage: topSubPct,
+        note: isAr ? `${topSubPct}% من مبيعات هذا القسم` : `${topSubPct}% of segment sales`,
+      });
+    }
+
+    return {
+      subject,
+      summaryWhat: isAr
+        ? `يمثل **${filterVal}** شريحة حيوية تحقق **${formatMetricNumber(entitySum, true)}** عبر **${entityRowsCount}** عملية مسجلة، وهو ما يشكل **${shareOfMetric}%** من الحجم الكلي.`
+        : `**${filterVal}** generates **${formatMetricNumberEn(entitySum, true)}** across **${entityRowsCount}** transactions, accounting for **${shareOfMetric}%** of total volume.`,
+      summaryWhy: [
+        isAr
+          ? `**كثافة العمليات والطلب**: استحوذت هذه الشريحة على ${shareOfRows}% من نشاط السجلات بالكامل، مما يدل على قاعدة عملاء نشطة ومتكررة.`
+          : `**High Order Volume**: Accounts for ${shareOfRows}% of all recorded activity, reflecting strong repeat transactions.`,
+        topSub
+          ? isAr
+            ? `**تركز الطلب في منتج/صنف رائد**: يشكل صنف **"${topSub[0]}"** المحرك الأكبر بمفرده بنسبة ${topSubPct}% من أداء هذه الشريحة.`
+            : `**Core Driver**: Category **"${topSub[0]}"** alone accounts for ${topSubPct}% of this segment's performance.`
+          : isAr
+          ? `**استقرار القيمة المتوسطة**: متوسط العملية الواحدة يصل إلى ${formatMetricNumber(avgPerOrder, true)}، وهو ما يعزز ثبات العائد.`
+          : `**Stable Basket Value**: Average transaction size reaches ${formatMetricNumberEn(avgPerOrder, true)}.`,
+        isAr
+          ? `**المكانة النسبية في البيانات**: يتفوق هذا النطاق بشكل ملحوظ مقارنة بالمعدل العام لباقي الشرائح.`
+          : `**Relative Outperformance**: Consistently ranks at the upper tier of the dataset.`,
+      ],
+      evidence,
+      recommendation: isAr
+        ? `الحفاظ على هذا الزخم من خلال ضمان توفر مخزون مستمر لأهم الأصناف (${topSub ? topSub[0] : 'الأكثر طلباً'})، واختبار عروض مجمعة (Bundles) لرفع متوسط العملية إلى مستويات أعلى.`
+        : `Maintain momentum by securing inventory for leading products and introducing bundle offers to lift average ticket size further.`,
+    };
+  }
+
+  // Handle Chart investigation
+  if (subject.type === 'chart' && subject.dimensionKey) {
+    const dimCol = cols.find((c) => c.key === subject.dimensionKey) || catCols[0];
+    const metric = metricCol || numCols[0];
+
+    const aggregated: Record<string, number> = {};
+    if (dimCol && metric) {
+      rows.forEach((r) => {
+        const dVal = String(r[dimCol.key] || 'غير محدد');
+        aggregated[dVal] = (aggregated[dVal] || 0) + (Number(r[metric.key]) || 0);
+      });
+    }
+
+    const sortedEntries = Object.entries(aggregated).sort((a, b) => b[1] - a[1]);
+    const totalAgg = sortedEntries.reduce((acc, curr) => acc + curr[1], 0);
+    const topEntry = sortedEntries[0] || ['غير متاح', 0];
+    const secondEntry = sortedEntries[1];
+    const lowestEntry = sortedEntries[sortedEntries.length - 1] || ['غير متاح', 0];
+
+    const topShare = totalAgg > 0 ? Math.round((topEntry[1] / totalAgg) * 100) : 0;
+    const gapMultiplier = lowestEntry[1] > 0 ? (topEntry[1] / lowestEntry[1]).toFixed(1) : '—';
+
+    const evidence: InvestigationEvidence[] = sortedEntries.slice(0, 4).map(([name, val]) => ({
+      label: name,
+      value: formatMetricNumber(val, true),
+      percentage: totalAgg > 0 ? Math.round((val / totalAgg) * 100) : 0,
+      note: isAr ? `مساهمة من إجمالي الرسم` : `Share of chart total`,
+    }));
+
+    return {
+      subject,
+      summaryWhat: isAr
+        ? `يوضح المخطط تفاوتًا واضحًا في توزيع **${metric?.label || subject.title}**، حيث يتصدر **"${topEntry[0]}"** المشهد بإجمالي **${formatMetricNumber(topEntry[1], true)}** بنسبة **${topShare}%** من إجمالي المخطط.`
+        : `The chart demonstrates a clear distribution pattern for **${subject.title}**, led by **"${topEntry[0]}"** with **${formatMetricNumberEn(topEntry[1], true)}** (${topShare}% share).`,
+      summaryWhy: [
+        isAr
+          ? `**الريادة الواضحة للصدارة**: يتفوق **"${topEntry[0]}"** على أدنى عنصر (${lowestEntry[0]}) بمعدل **${gapMultiplier}x** ضعفًا، مما يجعله مركز الثقل الحقيقي.`
+          : `**Clear Leader Advantage**: **"${topEntry[0]}"** outperforms the lowest item (${lowestEntry[0]}) by **${gapMultiplier}x**, representing the core weight.`,
+        secondEntry
+          ? isAr
+            ? `**الفجوة بين المركزين الأول والثاني**: الفارق بين "${topEntry[0]}" و "${secondEntry[0]}" يبلغ ${formatMetricNumber(topEntry[1] - secondEntry[1], true)}، ما يبرز هيمنة المتصدر.`
+            : `**First-to-Second Gap**: The difference between top two entries is ${formatMetricNumberEn(topEntry[1] - secondEntry[1], true)}. `
+          : isAr
+          ? `**تركز الحصص السوقية**: أغلب النشاط محصور في نطاق ضيق مقارنة بالخيارات المتاحة.`
+          : `**Share Concentration**: Most recorded activity is concentrated within top segments.`,
+        isAr
+          ? `**فرص النمو غير المستغلة**: الفئات الأدنى ما زالت تمتلك مساحات واسعة للتوسع وزيادة حصتها.`
+          : `**Untapped Potential**: Lower-tier items represent substantial headroom for growth.`,
+      ],
+      evidence,
+      recommendation: isAr
+        ? `ينبغي حماية ريادة "${topEntry[0]}" كركيزة للأعمال، بالتوازي مع تخصيص حملات محددة لتحفيز الفئات الأقل نموًا دون تشتيت الموارد الرئيسية.`
+        : `Protect the core leadership of "${topEntry[0]}" while testing targeted campaigns to unlock growth in lower-tier segments.`,
+    };
+  }
+
+  // Default: General KPI or Metric Investigation (e.g. Total Sales, Profit, Orders)
+  const metricSum = metricCol?.sum || rows.reduce((acc, r) => acc + (Number(r[metricCol?.key || '']) || 0), 0);
+  const avgVal = totalRows > 0 ? metricSum / totalRows : 0;
+
+  // Find the primary driver dimension with highest variance/concentration
+  let bestDim: ColumnMeta | null = null;
+  let bestDimBreakdown: [string, number][] = [];
+  let bestDimTopShare = 0;
+
+  for (const cat of catCols) {
+    const map: Record<string, number> = {};
+    rows.forEach((r) => {
+      const k = String(r[cat.key] || 'أخرى');
+      map[k] = (map[k] || 0) + (Number(r[metricCol?.key || '']) || 0);
+    });
+    const entries = Object.entries(map).sort((a, b) => b[1] - a[1]);
+    const topPct = metricSum > 0 && entries[0] ? (entries[0][1] / metricSum) * 100 : 0;
+    if (topPct > bestDimTopShare) {
+      bestDimTopShare = topPct;
+      bestDim = cat;
+      bestDimBreakdown = entries;
+    }
+  }
+
+  const topDriver = bestDimBreakdown[0];
+  const top2Driver = bestDimBreakdown[1];
+  const top2CombinedPct =
+    metricSum > 0 && topDriver && top2Driver
+      ? Math.round(((topDriver[1] + top2Driver[1]) / metricSum) * 100)
+      : Math.round(bestDimTopShare);
+
+  const evidence: InvestigationEvidence[] = [];
+
+  if (bestDimBreakdown.length > 0) {
+    bestDimBreakdown.slice(0, 3).forEach(([name, val]) => {
+      evidence.push({
+        label: `${bestDim?.label || 'الفئة'}: ${name}`,
+        value: formatMetricNumber(val, true),
+        percentage: metricSum > 0 ? Math.round((val / metricSum) * 100) : 0,
+        note: isAr ? `مساهمة من إجمالي ${subject.title}` : `Share of ${subject.title}`,
+      });
+    });
+  }
+
+  evidence.push({
+    label: isAr ? 'المتوسط الحسابي لكل سجل' : 'Average Per Record',
+    value: formatMetricNumber(avgVal, true),
+    note: isAr ? `محسوب على ${totalRows} سجل` : `Across ${totalRows} records`,
+  });
+
+  return {
+    subject,
+    summaryWhat: isAr
+      ? `يستقر **${subject.title}** عند **${subject.formattedValue || formatMetricNumber(metricSum, true)}** محسوبًا على إجمالي **${totalRows}** عملية مسجلة بمتوسط **${formatMetricNumber(avgVal, true)}** لكل عملية.`
+      : `**${subject.title}** stands at **${subject.formattedValue || formatMetricNumberEn(metricSum, true)}** across **${totalRows}** transactions with an average of **${formatMetricNumberEn(avgVal, true)}** per transaction.`,
+    summaryWhy: [
+      topDriver
+        ? isAr
+          ? `**التركز الأساسي في (${bestDim?.label || 'الفئة'})**: تصدر **"${topDriver[0]}"** بحصة بلغت **${Math.round(bestDimTopShare)}%** بمفرده، مما يجعله المحرك الأقوى للرقم.`
+          : `**Primary Concentration in (${bestDim?.label || 'Segment'})**: **"${topDriver[0]}"** drives **${Math.round(bestDimTopShare)}%** of the metric, serving as the core catalyst.`
+        : isAr
+        ? `**التوزيع عبر السجلات**: يعتمد الرقم على تراكم العمليات المتكررة عبر كافة السجلات المسجلة.`
+        : `**Cumulative Distribution**: Built from recurring transactional activity across all records.`,
+      top2Driver
+        ? isAr
+          ? `**قاعدة الـ 80/20 (باريتو)**: أول جهتين ("${topDriver[0]}" و "${top2Driver[0]}") تسهمان معًا بنحو **${top2CombinedPct}%** من الناتج الإجمالي.`
+          : `**Pareto Dynamics**: Top two performers ("${topDriver[0]}" and "${top2Driver[0]}") collectively generate **${top2CombinedPct}%** of total output.`
+        : isAr
+        ? `**ثبات متوسط السلة**: تتقارب معظم القيم المسجلة حول المتوسط العام دون انحرافات حادة.`
+        : `**Consistency**: Most transactions align closely around the mean without severe anomalies.`,
+      timeCols.length > 0
+        ? isAr
+          ? `**العامل الزمني والتكرار**: تشير التواريخ إلى نشاط مستمر يحافظ على استدامة المؤشر.`
+          : `**Time Velocity**: Transaction cadence supports continuous metric stability.`
+        : isAr
+        ? `**هامش الأمان المالي**: تركيبة العمليات تظهر استقرارًا عامًا في العوائد المحققة.`
+        : `**Operational Resilience**: Transaction composition demonstrates healthy volume stability.`,
+    ],
+    evidence,
+    recommendation: isAr
+      ? `الحرص على استمرار دعم القنوات والفئات الأعلى مساهمة، مع اختبار استراتيجيات جديدة لرفع إسهام باقي الفئات لتقليل الاعتمادية وزيادة النمو الكلي.`
+      : `Continue reinforcing primary drivers while deploying targeted initiatives to elevate lagging segments, mitigating concentration risk and boosting growth.`,
   };
 }

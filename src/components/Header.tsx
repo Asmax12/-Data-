@@ -8,6 +8,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { CleanedDataset } from '../types';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeSelector } from './ThemeSelector';
 
 interface HeaderProps {
   currentStep: 'home' | 'understanding' | 'dashboard';
@@ -32,10 +34,17 @@ export const Header: React.FC<HeaderProps> = ({
   onLanguageChange,
   onOpenUpdateModal,
 }) => {
+  const { theme } = useTheme();
   const isAr = language === 'ar';
 
   return (
-    <header className="sticky top-0 z-40 bg-[#FFF9F2]/95 backdrop-blur-md border-b border-[#B9A3D4]/30 px-4 lg:px-8 py-3.5 transition-colors no-print">
+    <header
+      className="sticky top-0 z-40 backdrop-blur-md border-b px-4 lg:px-8 py-3.5 transition-colors no-print"
+      style={{
+        backgroundColor: `${theme.colors.bg}F0`,
+        borderColor: theme.colors.border,
+      }}
+    >
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Brand & Simple Navigation */}
         <div className="flex items-center gap-6">
@@ -44,26 +53,38 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-2.5 cursor-pointer group focus:outline-none"
             title={isAr ? 'العودة للرئيسية' : 'Go to Home'}
           >
-            <div className="w-11 h-11 rounded-xl bg-[#4B315F] flex items-center justify-center text-[#FFF9F2] shadow-xs group-hover:scale-105 transition-transform">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform"
+              style={{ backgroundColor: theme.colors.primary }}
+            >
               <span className="font-extrabold text-2xl font-mono">D</span>
             </div>
             <div>
-              <span className="text-2xl sm:text-3xl font-black text-[#4B315F] tracking-tight">
+              <span
+                className="text-2xl sm:text-3xl font-black tracking-tight"
+                style={{ color: theme.colors.primary }}
+              >
                 DataMate
               </span>
             </div>
           </button>
 
           {/* Navigation Bar: الرئيسية | تحليل جديد | لوحة البيانات */}
-          <nav className="flex items-center gap-1.5 bg-white/80 p-1.5 rounded-xl border border-[#B9A3D4]/35 shadow-2xs">
+          <nav
+            className="flex items-center gap-1.5 p-1.5 rounded-xl border shadow-2xs"
+            style={{
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            }}
+          >
             {/* 1. الرئيسية */}
             <button
               onClick={onNavigateHome}
-              className={`px-4 py-2 rounded-lg font-bold text-base transition-all cursor-pointer flex items-center gap-2 ${
-                currentStep === 'home'
-                  ? 'bg-[#4B315F] text-[#FFF9F2] shadow-xs'
-                  : 'text-[#29232D]/85 hover:text-[#4B315F] hover:bg-white'
-              }`}
+              className="px-4 py-2 rounded-lg font-bold text-base transition-all cursor-pointer flex items-center gap-2"
+              style={{
+                backgroundColor: currentStep === 'home' ? theme.colors.primary : 'transparent',
+                color: currentStep === 'home' ? '#FFF9F2' : theme.colors.textPrimary,
+              }}
             >
               <Home className="w-4.5 h-4.5" />
               <span>{isAr ? 'الرئيسية' : 'Home'}</span>
@@ -72,10 +93,11 @@ export const Header: React.FC<HeaderProps> = ({
             {/* 2. + تحليل جديد */}
             <button
               onClick={onRequestNewAnalysis}
-              className="px-4 py-2 rounded-lg font-bold text-base text-[#4B315F] hover:bg-white transition-all cursor-pointer flex items-center gap-2"
+              className="px-4 py-2 rounded-lg font-bold text-base hover:bg-black/5 transition-all cursor-pointer flex items-center gap-2"
+              style={{ color: theme.colors.primary }}
               title={isAr ? 'بدء تحليل جديد من الصفر' : 'Start New Analysis'}
             >
-              <PlusCircle className="w-4.5 h-4.5 text-[#F4A261]" />
+              <PlusCircle className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
               <span>{isAr ? '+ تحليل جديد' : '+ New Analysis'}</span>
             </button>
 
@@ -83,11 +105,11 @@ export const Header: React.FC<HeaderProps> = ({
             {hasActiveDataset && (
               <button
                 onClick={onNavigateDashboard}
-                className={`px-4 py-2 rounded-lg font-bold text-base transition-all cursor-pointer flex items-center gap-2 ${
-                  currentStep === 'dashboard'
-                    ? 'bg-[#4B315F] text-[#FFF9F2] shadow-xs'
-                    : 'text-[#29232D]/85 hover:text-[#4B315F] hover:bg-white'
-                }`}
+                className="px-4 py-2 rounded-lg font-bold text-base transition-all cursor-pointer flex items-center gap-2"
+                style={{
+                  backgroundColor: currentStep === 'dashboard' ? theme.colors.primary : 'transparent',
+                  color: currentStep === 'dashboard' ? '#FFF9F2' : theme.colors.textPrimary,
+                }}
               >
                 <LayoutDashboard className="w-4.5 h-4.5" />
                 <span>{isAr ? 'لوحة البيانات' : 'Dashboard'}</span>
@@ -97,11 +119,18 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right side actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
           {/* Active Dataset tag */}
           {dataset && currentStep === 'dashboard' && (
-            <div className="hidden lg:flex items-center gap-2 bg-white/90 border border-[#B9A3D4]/40 px-3.5 py-2 rounded-xl text-base font-bold text-[#29232D]">
-              <FileSpreadsheet className="w-4.5 h-4.5 text-[#4B315F]" />
+            <div
+              className="hidden lg:flex items-center gap-2 border px-3.5 py-2 rounded-xl text-base font-bold"
+              style={{
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                color: theme.colors.textPrimary,
+              }}
+            >
+              <FileSpreadsheet className="w-4.5 h-4.5" style={{ color: theme.colors.primary }} />
               <span className="truncate max-w-[190px]">{dataset.name}</span>
             </div>
           )}
@@ -110,21 +139,26 @@ export const Header: React.FC<HeaderProps> = ({
           {dataset && currentStep === 'dashboard' && onOpenUpdateModal && (
             <button
               onClick={onOpenUpdateModal}
-              className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-base font-bold rounded-xl bg-[#4B315F] text-[#FFF9F2] hover:bg-[#4B315F]/90 transition-all cursor-pointer shadow-xs"
+              className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-base font-bold rounded-xl text-white transition-all cursor-pointer shadow-xs hover:opacity-95"
+              style={{ backgroundColor: theme.colors.primary }}
               title={isAr ? 'تحديث الداشبورد ببيانات جديدة' : 'Update With New Data'}
             >
-              <RefreshCw className="w-4.5 h-4.5 text-[#F4A261]" />
+              <RefreshCw className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
               <span>{isAr ? 'تحديث البيانات' : 'Update Data'}</span>
             </button>
           )}
 
+          {/* Theme Selector (5 themes) */}
+          <ThemeSelector language={language} />
+
           {/* Language Switcher */}
           <button
             onClick={() => onLanguageChange(isAr ? 'en' : 'ar')}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-base font-bold rounded-xl text-[#4B315F] hover:bg-white/80 border border-transparent hover:border-[#B9A3D4]/30 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-2 text-base font-bold rounded-xl hover:bg-white/80 border border-transparent hover:border-black/10 transition-colors cursor-pointer"
+            style={{ color: theme.colors.primary }}
             title="Switch Language"
           >
-            <Globe className="w-4.5 h-4.5 text-[#F4A261]" />
+            <Globe className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
             <span>{isAr ? 'En' : 'عربي'}</span>
           </button>
         </div>
@@ -132,3 +166,4 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+

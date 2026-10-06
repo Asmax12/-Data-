@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { formatMetricNumber } from '../../utils/analyticsEngine';
 import { TrendingUp } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface LineChartProps {
   data: { label: string; value: number }[];
@@ -8,11 +9,15 @@ interface LineChartProps {
 }
 
 export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
+  const { theme } = useTheme();
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   if (!data || data.length < 2) {
     return (
-      <div className="p-8 text-center text-[#4B315F]/70 text-base font-semibold">
+      <div
+        className="p-8 text-center text-base font-semibold"
+        style={{ color: `${theme.colors.primary}B0` }}
+      >
         لا توجد نقاط زمنية كافية لرسم منحنى التطور
       </div>
     );
@@ -64,12 +69,12 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
         >
           <defs>
             <linearGradient id="premiumLineGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#F4A261" stopOpacity="0.45" />
-              <stop offset="60%" stopColor="#4B315F" stopOpacity="0.12" />
-              <stop offset="100%" stopColor="#FFF9F2" stopOpacity="0.0" />
+              <stop offset="0%" stopColor={theme.colors.secondary} stopOpacity="0.45" />
+              <stop offset="60%" stopColor={theme.colors.primary} stopOpacity="0.12" />
+              <stop offset="100%" stopColor={theme.colors.bg} stopOpacity="0.0" />
             </linearGradient>
             <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#4B315F" floodOpacity="0.18" />
+              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={theme.colors.primary} floodOpacity="0.18" />
             </filter>
           </defs>
 
@@ -79,8 +84,8 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
             y1={paddingY}
             x2={width - paddingX}
             y2={paddingY}
-            stroke="#B9A3D4"
-            strokeOpacity="0.25"
+            stroke={theme.colors.border}
+            strokeOpacity="0.8"
             strokeDasharray="4 4"
           />
           <line
@@ -88,8 +93,8 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
             y1={height / 2}
             x2={width - paddingX}
             y2={height / 2}
-            stroke="#B9A3D4"
-            strokeOpacity="0.15"
+            stroke={theme.colors.border}
+            strokeOpacity="0.6"
             strokeDasharray="4 4"
           />
           <line
@@ -97,8 +102,8 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
             y1={height - paddingY}
             x2={width - paddingX}
             y2={height - paddingY}
-            stroke="#B9A3D4"
-            strokeOpacity="0.4"
+            stroke={theme.colors.border}
+            strokeOpacity="0.9"
           />
 
           {/* Area fill */}
@@ -108,7 +113,7 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
           <path
             d={pathD}
             fill="none"
-            stroke="#4B315F"
+            stroke={theme.colors.primary}
             strokeWidth="3.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -122,7 +127,7 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
               y1={paddingY}
               x2={points[hoveredIndex].x}
               y2={height - paddingY}
-              stroke="#F4A261"
+              stroke={theme.colors.secondary}
               strokeWidth="1.5"
               strokeDasharray="3 3"
             />
@@ -143,7 +148,7 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
                   cy={p.y}
                   r={isHovered ? 7 : 4.5}
                   fill="#FFF9F2"
-                  stroke={isHovered ? '#F4A261' : '#4B315F'}
+                  stroke={isHovered ? theme.colors.secondary : theme.colors.primary}
                   strokeWidth={isHovered ? 4 : 2.5}
                   className="transition-all duration-200"
                 />
@@ -155,16 +160,22 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
         {/* Floating tooltip */}
         {hoveredIndex !== null && points[hoveredIndex] && (
           <div
-            className="absolute bg-[#29232D] text-[#FFF9F2] text-sm px-4 py-2.5 rounded-xl shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full border border-white/10 z-20"
+            className="absolute text-sm px-4 py-2.5 rounded-xl shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full border z-20"
             style={{
               left: `${(points[hoveredIndex].x / width) * 100}%`,
               top: `${(points[hoveredIndex].y / height) * 100}%`,
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+              color: theme.colors.textPrimary,
             }}
           >
-            <div className="text-sm text-[#FFF9F2]/90 font-semibold">
+            <div className="text-sm font-semibold" style={{ color: theme.colors.textPrimary }}>
               {points[hoveredIndex].label}
             </div>
-            <div className="text-[#F4A261] font-mono font-black text-base mt-0.5">
+            <div
+              className="font-mono font-black text-base mt-0.5"
+              style={{ color: theme.colors.primary }}
+            >
               {formatMetricNumber(points[hoveredIndex].value, true)}
             </div>
           </div>
@@ -172,20 +183,31 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
       </div>
 
       {/* Axis dates (large, clear, legible) */}
-      <div className="flex justify-between items-center text-sm sm:text-base text-[#29232D]/85 px-4 pt-2.5 font-mono font-bold">
+      <div className="flex justify-between items-center text-sm sm:text-base px-4 pt-2.5 font-mono font-bold" style={{ color: `${theme.colors.textPrimary}D0` }}>
         <span>{data[0]?.label}</span>
         {data.length > 2 && <span className="opacity-75">{data[Math.floor(data.length / 2)]?.label}</span>}
         <span>{data[data.length - 1]?.label}</span>
       </div>
 
-      <div className="mt-5 pt-3.5 text-sm sm:text-base text-[#29232D]/75 flex items-center justify-between border-t border-[#B9A3D4]/20 font-semibold">
-        <span className="flex items-center gap-2 text-[#4B315F] font-bold">
-          <TrendingUp className="w-4.5 h-4.5 text-[#F4A261]" />
+      <div
+        className="mt-5 pt-3.5 text-sm sm:text-base flex items-center justify-between border-t font-semibold"
+        style={{ borderColor: theme.colors.border, color: `${theme.colors.textPrimary}B8` }}
+      >
+        <span
+          className="flex items-center gap-2 font-bold"
+          style={{ color: theme.colors.primary }}
+        >
+          <TrendingUp className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
           <span>
             {growth >= 0 ? `نمو بمعدل تقريبي +${growth}%` : `تغير بمعدل ${growth}%`}
           </span>
         </span>
-        <span className="font-mono font-bold text-[#4B315F]">{data.length} فترات زمنية</span>
+        <span
+          className="font-mono font-bold"
+          style={{ color: theme.colors.primary }}
+        >
+          {data.length} فترات زمنية
+        </span>
       </div>
     </div>
   );

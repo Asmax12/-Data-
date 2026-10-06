@@ -3,22 +3,183 @@
 @theme {
   --font-cairo: "Cairo", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --color-cream: #FFF9F2;
-  --color-plum: #4B315F;
-  --color-apricot: #F4A261;
-  --color-lavender: #B9A3D4;
-  --color-coral: #E76F7A;
-  --color-cocoa: #29232D;
+
+  /* Central Theme Design Tokens */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-border: var(--border);
+  --color-border-accent: var(--border-accent);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Legacy aliases for seamless backwards-compatibility */
+  --color-plum: var(--primary);
+  --color-cream: var(--background);
+  --color-apricot: var(--secondary);
+  --color-lavender: var(--border-accent);
+  --color-coral: var(--accent);
+  --color-cocoa: var(--text-primary);
 }
 
 :root {
   font-family: var(--font-cairo), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #FFF9F2;
-  color: #29232D;
+
+  /* Default tokens: Theme 1 — Warm Plum */
+  --primary: #4B315F;
+  --primary-hover: #3D2450;
+  --secondary: #F4A261;
+  --background: #FFF9F2;
+  --surface: #FFFFFF;
+  --surface-secondary: #FAF3EA;
+  --text-primary: #29232D;
+  --text-secondary: #5C5263;
+  --border: #E2D7EA;
+  --border-accent: #B9A3D4;
+  --accent: #E76F7A;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --chart-1: #4B315F;
+  --chart-2: #F4A261;
+  --chart-3: #E76F7A;
+  --chart-4: #B9A3D4;
+  --chart-5: #7C5295;
+
+  background-color: var(--background);
+  color: var(--text-primary);
   font-size: 17px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Theme 1 — Warm Plum */
+[data-theme="warm-plum"] {
+  --primary: #4B315F;
+  --primary-hover: #3D2450;
+  --secondary: #F4A261;
+  --background: #FFF9F2;
+  --surface: #FFFFFF;
+  --surface-secondary: #FAF3EA;
+  --text-primary: #29232D;
+  --text-secondary: #5C5263;
+  --border: #E2D7EA;
+  --border-accent: #B9A3D4;
+  --accent: #E76F7A;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --chart-1: #4B315F;
+  --chart-2: #F4A261;
+  --chart-3: #E76F7A;
+  --chart-4: #B9A3D4;
+  --chart-5: #7C5295;
+}
+
+/* Theme 2 — Soft Coral */
+[data-theme="soft-coral"] {
+  --primary: #E76F7A;
+  --primary-hover: #D45C68;
+  --secondary: #F4A261;
+  --background: #FFF9F2;
+  --surface: #FFFFFF;
+  --surface-secondary: #FFF3EA;
+  --text-primary: #4B315F;
+  --text-secondary: #664B79;
+  --border: #F3D8DE;
+  --border-accent: #B9A3D4;
+  --accent: #B9A3D4;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --chart-1: #E76F7A;
+  --chart-2: #F4A261;
+  --chart-3: #4B315F;
+  --chart-4: #B9A3D4;
+  --chart-5: #D45C68;
+}
+
+/* Theme 3 — Calm Lavender */
+[data-theme="calm-lavender"] {
+  --primary: #4B315F;
+  --primary-hover: #3B234D;
+  --secondary: #B9A3D4;
+  --background: #FFF9F2;
+  --surface: #FFFFFF;
+  --surface-secondary: #F5EFFC;
+  --text-primary: #29232D;
+  --text-secondary: #5C5263;
+  --border: #E3D8EE;
+  --border-accent: #B9A3D4;
+  --accent: #E76F7A;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --chart-1: #7D619E;
+  --chart-2: #B9A3D4;
+  --chart-3: #E76F7A;
+  --chart-4: #F4A261;
+  --chart-5: #4B315F;
+}
+
+/* Theme 4 — Fresh Sage */
+[data-theme="fresh-sage"] {
+  --primary: #4F6D58;
+  --primary-hover: #3E5646;
+  --secondary: #7D9E87;
+  --background: #FFF9F2;
+  --surface: #FFFFFF;
+  --surface-secondary: #F2EFE8;
+  --text-primary: #29232D;
+  --text-secondary: #525853;
+  --border: #D4DED6;
+  --border-accent: #9DBAA4;
+  --accent: #4B315F;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --chart-1: #4F6D58;
+  --chart-2: #7D9E87;
+  --chart-3: #4B315F;
+  --chart-4: #B8A282;
+  --chart-5: #364D3D;
+}
+
+/* Theme 5 — Elegant Sand */
+[data-theme="elegant-sand"] {
+  --primary: #8E6F48;
+  --primary-hover: #755935;
+  --secondary: #C5A57A;
+  --background: #FFF9F2;
+  --surface: #FFFFFF;
+  --surface-secondary: #F6EFE5;
+  --text-primary: #29232D;
+  --text-secondary: #5F564B;
+  --border: #E4DACB;
+  --border-accent: #CBB69B;
+  --accent: #4B315F;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --chart-1: #8E6F48;
+  --chart-2: #C5A57A;
+  --chart-3: #4B315F;
+  --chart-4: #6B4D2B;
+  --chart-5: #D4BE9E;
 }
 
 html[lang="ar"],
@@ -42,11 +203,11 @@ body[dir="ltr"] {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #B9A3D4;
+  background: var(--border-accent);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #4B315F;
+  background: var(--primary);
 }
 
 /* Print Styles */

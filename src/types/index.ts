@@ -110,3 +110,31 @@ export interface WorkspaceState {
   chatHistory: NaturalQueryMessage[];
   lastUpdated: string;
 }
+
+export interface InvestigationSubject {
+  type: 'kpi' | 'chart' | 'datapoint';
+  id?: string;
+  title: string;
+  titleEn?: string;
+  metricKey?: string;
+  dimensionKey?: string;
+  filterValue?: string;
+  formattedValue?: string;
+  currentValue?: number | string;
+}
+
+export interface InvestigationEvidence {
+  label: string;
+  value: string;
+  percentage?: number;
+  note?: string;
+}
+
+export interface InvestigationResult {
+  subject: InvestigationSubject;
+  summaryWhat: string;
+  summaryWhy: string[];
+  evidence: InvestigationEvidence[];
+  recommendation: string;
+  isAiEnriched?: boolean;
+}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { formatMetricNumber } from '../../utils/analyticsEngine';
 import { PieChart as PieIcon } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface DonutChartProps {
   data: { label: string; value: number; percentage?: number }[];
@@ -9,25 +10,28 @@ interface DonutChartProps {
   activeFilter?: string | null;
 }
 
-const PALETTE = ['#4B315F', '#F4A261', '#E76F7A', '#B9A3D4', '#29232D', '#D97706'];
-
 export const DonutChart: React.FC<DonutChartProps> = ({
   data,
   title,
   onSliceClick,
   activeFilter,
 }) => {
+  const { theme } = useTheme();
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   if (!data || data.length === 0) {
     return (
-      <div className="p-8 text-center text-[#4B315F]/70 text-base font-semibold">
+      <div
+        className="p-8 text-center text-base font-semibold"
+        style={{ color: `${theme.colors.primary}B0` }}
+      >
         لا توجد بيانات كافية لعرض التوزيع
       </div>
     );
   }
 
   const total = data.reduce((acc, curr) => acc + curr.value, 0) || 1;
+  const PALETTE = theme.colors.chartPalette;
 
   // Calculate SVG stroke segments
   const radius = 50;
@@ -83,19 +87,25 @@ export const DonutChart: React.FC<DonutChartProps> = ({
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-3">
             {activeItem ? (
               <>
-                <span className="text-sm text-[#29232D] truncate max-w-[110px] font-bold">
+                <span className="text-sm truncate max-w-[110px] font-bold" style={{ color: theme.colors.textPrimary }}>
                   {activeItem.label}
                 </span>
-                <span className="text-2xl font-black text-[#4B315F] font-mono mt-0.5">
+                <span
+                  className="text-2xl font-black font-mono mt-0.5"
+                  style={{ color: theme.colors.primary }}
+                >
                   {activeItem.percent}%
                 </span>
               </>
             ) : (
               <>
-                <span className="text-xs sm:text-sm text-[#29232D]/70 uppercase tracking-wider font-bold">
+                <span className="text-xs sm:text-sm uppercase tracking-wider font-bold" style={{ color: `${theme.colors.textPrimary}B0` }}>
                   الإجمالي
                 </span>
-                <span className="text-base sm:text-lg font-black text-[#4B315F] font-mono mt-0.5">
+                <span
+                  className="text-base sm:text-lg font-black font-mono mt-0.5"
+                  style={{ color: theme.colors.primary }}
+                >
                   {formatMetricNumber(total, true)}
                 </span>
               </>
@@ -111,12 +121,14 @@ export const DonutChart: React.FC<DonutChartProps> = ({
               <div
                 key={idx}
                 className={`flex items-center justify-between text-base p-3 rounded-xl cursor-pointer transition-all ${
-                  slice.isSelected
-                    ? 'bg-[#4B315F]/10 ring-2 ring-[#4B315F] shadow-xs'
-                    : isHovered
+                  isHovered
                     ? 'bg-white shadow-xs translate-x-1'
                     : 'hover:bg-white/70'
                 }`}
+                style={{
+                  backgroundColor: slice.isSelected ? `${theme.colors.primary}12` : undefined,
+                  boxShadow: slice.isSelected ? `0 0 0 2px ${theme.colors.primary}` : undefined,
+                }}
                 onMouseEnter={() => setHoveredIdx(idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
                 onClick={() => onSliceClick?.(slice.label)}
@@ -126,15 +138,25 @@ export const DonutChart: React.FC<DonutChartProps> = ({
                     className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
                     style={{ backgroundColor: slice.color }}
                   />
-                  <span className="truncate max-w-[160px] font-bold text-base text-[#29232D]">
+                  <span className="truncate max-w-[160px] font-bold text-base" style={{ color: theme.colors.textPrimary }}>
                     {slice.label}
                   </span>
                 </div>
                 <div className="flex items-center gap-2.5 font-mono text-base">
-                  <span className="font-black text-[#4B315F]">
+                  <span
+                    className="font-black"
+                    style={{ color: theme.colors.primary }}
+                  >
                     {formatMetricNumber(slice.value, true)}
                   </span>
-                  <span className="text-xs sm:text-sm text-[#29232D]/80 bg-[#FFF9F2] px-2.5 py-0.5 rounded-md border border-[#B9A3D4]/25 font-bold">
+                  <span
+                    className="text-xs sm:text-sm px-2.5 py-0.5 rounded-md border font-bold"
+                    style={{
+                      backgroundColor: theme.colors.bg,
+                      borderColor: theme.colors.border,
+                      color: theme.colors.text,
+                    }}
+                  >
                     {slice.percent}%
                   </span>
                 </div>
@@ -144,13 +166,22 @@ export const DonutChart: React.FC<DonutChartProps> = ({
         </div>
       </div>
 
-      <div className="mt-5 pt-3.5 text-sm sm:text-base text-[#29232D]/75 flex items-center justify-between border-t border-[#B9A3D4]/20 font-semibold">
+      <div
+        className="mt-5 pt-3.5 text-sm sm:text-base flex items-center justify-between border-t font-semibold"
+        style={{ borderColor: theme.colors.border, color: `${theme.colors.textPrimary}B8` }}
+      >
         <span className="flex items-center gap-2">
-          <PieIcon className="w-4.5 h-4.5 text-[#F4A261]" />
+          <PieIcon className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
           <span>توزيع الحصص والنسب المئوية</span>
         </span>
-        <span className="font-mono font-bold text-[#4B315F]">{slices.length} فئات</span>
+        <span
+          className="font-mono font-bold"
+          style={{ color: theme.colors.primary }}
+        >
+          {slices.length} فئات
+        </span>
       </div>
     </div>
   );
 };
+

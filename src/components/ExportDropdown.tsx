@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Download, Printer, Image, FileText, ChevronDown, Check } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
+import { useTheme } from '../context/ThemeContext';
 
 interface ExportDropdownProps {
   language: 'ar' | 'en';
@@ -14,6 +15,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
   targetElementId,
   datasetName,
 }) => {
+  const { theme } = useTheme();
   const isAr = language === 'ar';
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -55,7 +57,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
       const dataUrl = await toPng(node, {
         quality: 0.98,
         pixelRatio: 2,
-        backgroundColor: '#FFF9F2',
+        backgroundColor: theme.colors.background,
         filter: exportFilter,
       });
 
@@ -89,7 +91,7 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
       const dataUrl = await toPng(node, {
         quality: 0.98,
         pixelRatio: 2,
-        backgroundColor: '#FFF9F2',
+        backgroundColor: theme.colors.background,
         filter: exportFilter,
       });
 
@@ -140,9 +142,14 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isExporting}
-        className="flex items-center gap-2 px-4.5 py-2.5 text-base font-bold rounded-xl bg-white border border-[#B9A3D4]/50 text-[#4B315F] hover:bg-[#FFF9F2] shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+        className="flex items-center gap-2 px-4.5 py-2.5 text-base font-bold rounded-xl border shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+        style={{
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+          color: theme.colors.primary,
+        }}
       >
-        <Download className="w-4 h-4 text-[#F4A261]" />
+        <Download className="w-4 h-4" style={{ color: theme.colors.secondary }} />
         <span>
           {isExporting
             ? isAr
@@ -152,26 +159,39 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
             ? 'تصدير'
             : 'Export'}
         </span>
-        <ChevronDown className="w-3.5 h-3.5 text-[#29232D]/50" />
+        <ChevronDown className="w-3.5 h-3.5 opacity-60" style={{ color: theme.colors.textPrimary }} />
       </button>
 
       {/* Success notification */}
       {exportSuccess && (
-        <div className="absolute top-full mt-1.5 right-0 z-50 bg-[#4B315F] text-[#FFF9F2] text-xs sm:text-sm font-bold px-3 py-1.5 rounded-xl shadow-md whitespace-nowrap flex items-center gap-1.5 animate-fade-in">
-          <Check className="w-3.5 h-3.5 text-[#F4A261]" />
+        <div
+          className="absolute top-full mt-1.5 right-0 z-50 text-xs sm:text-sm font-bold px-3 py-1.5 rounded-xl shadow-md whitespace-nowrap flex items-center gap-1.5 animate-fade-in"
+          style={{
+            backgroundColor: theme.colors.primary,
+            color: '#FFF9F2',
+          }}
+        >
+          <Check className="w-3.5 h-3.5" style={{ color: theme.colors.secondary }} />
           <span>{exportSuccess}</span>
         </div>
       )}
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="export-menu absolute top-full mt-2 right-0 z-50 w-56 bg-white rounded-2xl border border-[#B9A3D4]/40 shadow-xl py-2 text-sm sm:text-base text-[#29232D] animate-fade-in">
+        <div
+          className="export-menu absolute top-full mt-2 right-0 z-50 w-56 rounded-2xl border shadow-xl py-2 text-sm sm:text-base animate-fade-in"
+          style={{
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.border,
+            color: theme.colors.textPrimary,
+          }}
+        >
           {/* 1. Download as Image (PNG) */}
           <button
             onClick={handleExportPNG}
-            className="w-full px-4 py-2.5 text-right hover:bg-[#FFF9F2] flex items-center gap-2.5 cursor-pointer transition-colors"
+            className="w-full px-4 py-2.5 text-right flex items-center gap-2.5 cursor-pointer transition-colors hover:bg-black/5"
           >
-            <Image className="w-4.5 h-4.5 text-[#F4A261]" />
+            <Image className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
             <span className="font-bold">
               {isAr ? 'تحميل كصورة (PNG)' : 'Download as PNG'}
             </span>
@@ -180,9 +200,9 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
           {/* 2. Download as real PDF */}
           <button
             onClick={handleExportPDF}
-            className="w-full px-4 py-2.5 text-right hover:bg-[#FFF9F2] flex items-center gap-2.5 cursor-pointer transition-colors"
+            className="w-full px-4 py-2.5 text-right flex items-center gap-2.5 cursor-pointer transition-colors hover:bg-black/5"
           >
-            <FileText className="w-4.5 h-4.5 text-[#E76F7A]" />
+            <FileText className="w-4.5 h-4.5" style={{ color: theme.colors.accent }} />
             <span className="font-bold">
               {isAr ? 'تحميل ملف PDF' : 'Download PDF'}
             </span>
@@ -191,9 +211,10 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
           {/* 3. Print Dashboard */}
           <button
             onClick={handlePrint}
-            className="w-full px-4 py-2.5 text-right hover:bg-[#FFF9F2] flex items-center gap-2.5 cursor-pointer transition-colors border-t border-[#B9A3D4]/20"
+            className="w-full px-4 py-2.5 text-right flex items-center gap-2.5 cursor-pointer transition-colors border-t hover:bg-black/5"
+            style={{ borderColor: theme.colors.border }}
           >
-            <Printer className="w-4.5 h-4.5 text-[#4B315F]" />
+            <Printer className="w-4.5 h-4.5" style={{ color: theme.colors.primary }} />
             <span className="font-bold">
               {isAr ? 'طباعة لوحة التحكم' : 'Print Dashboard'}
             </span>

@@ -32,13 +32,15 @@ import {
   subscribeToAIStatus,
   AIHealthStatus,
 } from './services/aiService';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 
 const WORKSPACE_STORAGE_KEY = 'datamate_workspace_v1';
 const LANGUAGE_STORAGE_KEY = 'datamate_lang';
 
 type AppStep = 'home' | 'understanding' | 'dashboard';
 
-export default function App() {
+function AppContent() {
+  const { theme } = useTheme();
   const [language, setLanguage] = useState<'ar' | 'en'>(() => {
     return (localStorage.getItem(LANGUAGE_STORAGE_KEY) as 'ar' | 'en') || 'ar';
   });
@@ -366,7 +368,13 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF9F2] text-[#29232D] flex flex-col font-sans transition-colors">
+    <div
+      className="min-h-screen flex flex-col font-sans transition-colors"
+      style={{
+        backgroundColor: theme.colors.bg,
+        color: theme.colors.text,
+      }}
+    >
       {/* Persistent App Header with Navigation (الرئيسية | تحليل جديد | لوحة البيانات) */}
       <Header
         currentStep={step}
@@ -464,7 +472,14 @@ export default function App() {
       />
 
       {/* Footer (Hidden on print) */}
-      <footer className="no-print border-t border-[#B9A3D4]/20 py-4 px-6 text-center text-xs text-[#29232D]/50 bg-[#FFF9F2]">
+      <footer
+        className="no-print border-t py-4 px-6 text-center text-xs transition-colors"
+        style={{
+          backgroundColor: theme.colors.bg,
+          borderColor: theme.colors.border,
+          color: `${theme.colors.text}80`,
+        }}
+      >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             DataMate — {language === 'ar' ? 'سيب الباقي علينا' : 'Friendly, zero-code data companion'}
@@ -477,3 +492,12 @@ export default function App() {
     </div>
   );
 }
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
