@@ -21,7 +21,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
 
   if (!data || data.length === 0) {
     return (
-      <div className="p-8 text-center text-[#4B315F]/60 text-xs">
+      <div className="p-8 text-center text-[#4B315F]/70 text-base font-semibold">
         لا توجد بيانات كافية لعرض التوزيع
       </div>
     );
@@ -58,7 +58,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
     <div className="flex flex-col h-full justify-between">
       <div className="flex flex-col sm:flex-row items-center gap-6 py-2">
         {/* SVG Donut */}
-        <div className="relative w-40 h-40 shrink-0 flex items-center justify-center">
+        <div className="relative w-48 h-48 shrink-0 flex items-center justify-center">
           <svg viewBox="0 0 140 140" className="w-full h-full -rotate-90">
             {slices.map((slice, idx) => (
               <circle
@@ -68,7 +68,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
                 r={radius}
                 fill="transparent"
                 stroke={slice.color}
-                strokeWidth={hoveredIdx === idx ? 24 : slice.isSelected ? 23 : 19}
+                strokeWidth={hoveredIdx === idx ? 25 : slice.isSelected ? 24 : 19}
                 strokeDasharray={slice.strokeDasharray}
                 strokeDashoffset={slice.strokeDashoffset}
                 className="transition-all duration-300 cursor-pointer"
@@ -83,19 +83,19 @@ export const DonutChart: React.FC<DonutChartProps> = ({
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-3">
             {activeItem ? (
               <>
-                <span className="text-[11px] text-[#29232D]/70 truncate max-w-[85px] font-medium">
+                <span className="text-sm text-[#29232D] truncate max-w-[110px] font-bold">
                   {activeItem.label}
                 </span>
-                <span className="text-base font-extrabold text-[#4B315F] font-mono">
+                <span className="text-2xl font-black text-[#4B315F] font-mono mt-0.5">
                   {activeItem.percent}%
                 </span>
               </>
             ) : (
               <>
-                <span className="text-[10px] text-[#29232D]/55 uppercase tracking-wider font-semibold">
+                <span className="text-xs sm:text-sm text-[#29232D]/70 uppercase tracking-wider font-bold">
                   الإجمالي
                 </span>
-                <span className="text-xs font-bold text-[#4B315F] font-mono">
+                <span className="text-base sm:text-lg font-black text-[#4B315F] font-mono mt-0.5">
                   {formatMetricNumber(total, true)}
                 </span>
               </>
@@ -104,37 +104,37 @@ export const DonutChart: React.FC<DonutChartProps> = ({
         </div>
 
         {/* Legend */}
-        <div className="flex-1 space-y-2 w-full">
+        <div className="flex-1 space-y-3 w-full">
           {slices.slice(0, 5).map((slice, idx) => {
             const isHovered = hoveredIdx === idx;
             return (
               <div
                 key={idx}
-                className={`flex items-center justify-between text-xs p-2 rounded-xl cursor-pointer transition-all ${
+                className={`flex items-center justify-between text-base p-3 rounded-xl cursor-pointer transition-all ${
                   slice.isSelected
-                    ? 'bg-[#4B315F]/10 ring-1 ring-[#4B315F] shadow-2xs'
+                    ? 'bg-[#4B315F]/10 ring-2 ring-[#4B315F] shadow-xs'
                     : isHovered
-                    ? 'bg-white/95 shadow-2xs translate-x-0.5'
-                    : 'hover:bg-white/60'
+                    ? 'bg-white shadow-xs translate-x-1'
+                    : 'hover:bg-white/70'
                 }`}
                 onMouseEnter={() => setHoveredIdx(idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
                 onClick={() => onSliceClick?.(slice.label)}
               >
-                <div className="flex items-center gap-2 truncate">
+                <div className="flex items-center gap-3 truncate">
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs"
+                    className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
                     style={{ backgroundColor: slice.color }}
                   />
-                  <span className="truncate max-w-[130px] font-semibold text-[#29232D]">
+                  <span className="truncate max-w-[160px] font-bold text-base text-[#29232D]">
                     {slice.label}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 font-mono text-[11px]">
-                  <span className="font-bold text-[#4B315F]">
+                <div className="flex items-center gap-2.5 font-mono text-base">
+                  <span className="font-black text-[#4B315F]">
                     {formatMetricNumber(slice.value, true)}
                   </span>
-                  <span className="text-[10px] text-[#29232D]/60 bg-[#FFF9F2] px-1.5 py-0.5 rounded border border-[#B9A3D4]/20 font-medium">
+                  <span className="text-xs sm:text-sm text-[#29232D]/80 bg-[#FFF9F2] px-2.5 py-0.5 rounded-md border border-[#B9A3D4]/25 font-bold">
                     {slice.percent}%
                   </span>
                 </div>
@@ -144,12 +144,12 @@ export const DonutChart: React.FC<DonutChartProps> = ({
         </div>
       </div>
 
-      <div className="mt-4 pt-3 text-[11px] text-[#29232D]/60 flex items-center justify-between border-t border-[#B9A3D4]/20 font-medium">
-        <span className="flex items-center gap-1">
-          <PieIcon className="w-3.5 h-3.5 text-[#F4A261]" />
+      <div className="mt-5 pt-3.5 text-sm sm:text-base text-[#29232D]/75 flex items-center justify-between border-t border-[#B9A3D4]/20 font-semibold">
+        <span className="flex items-center gap-2">
+          <PieIcon className="w-4.5 h-4.5 text-[#F4A261]" />
           <span>توزيع الحصص والنسب المئوية</span>
         </span>
-        <span className="font-mono text-[#4B315F]">{slices.length} فئات</span>
+        <span className="font-mono font-bold text-[#4B315F]">{slices.length} فئات</span>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
 
   if (!data || data.length < 2) {
     return (
-      <div className="p-8 text-center text-[#4B315F]/60 text-xs">
+      <div className="p-8 text-center text-[#4B315F]/70 text-base font-semibold">
         لا توجد نقاط زمنية كافية لرسم منحنى التطور
       </div>
     );
@@ -23,10 +23,10 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
   const minVal = Math.min(...values, 0);
   const range = maxVal - minVal || 1;
 
-  const width = 500;
-  const height = 200;
-  const paddingX = 42;
-  const paddingY = 26;
+  const width = 520;
+  const height = 210;
+  const paddingX = 44;
+  const paddingY = 28;
 
   const points = data.map((d, i) => {
     const x = paddingX + (i / (data.length - 1)) * (width - paddingX * 2);
@@ -141,10 +141,10 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={isHovered ? 6.5 : 4}
+                  r={isHovered ? 7 : 4.5}
                   fill="#FFF9F2"
                   stroke={isHovered ? '#F4A261' : '#4B315F'}
-                  strokeWidth={isHovered ? 3.5 : 2.5}
+                  strokeWidth={isHovered ? 4 : 2.5}
                   className="transition-all duration-200"
                 />
               </g>
@@ -155,37 +155,37 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
         {/* Floating tooltip */}
         {hoveredIndex !== null && points[hoveredIndex] && (
           <div
-            className="absolute bg-[#29232D] text-[#FFF9F2] text-xs px-3 py-1.5 rounded-xl shadow-lg pointer-events-none transform -translate-x-1/2 -translate-y-full border border-white/10 z-20"
+            className="absolute bg-[#29232D] text-[#FFF9F2] text-sm px-4 py-2.5 rounded-xl shadow-xl pointer-events-none transform -translate-x-1/2 -translate-y-full border border-white/10 z-20"
             style={{
               left: `${(points[hoveredIndex].x / width) * 100}%`,
               top: `${(points[hoveredIndex].y / height) * 100}%`,
             }}
           >
-            <div className="text-[11px] text-[#FFF9F2]/70 font-medium">
+            <div className="text-sm text-[#FFF9F2]/90 font-semibold">
               {points[hoveredIndex].label}
             </div>
-            <div className="text-[#F4A261] font-mono font-bold text-xs">
+            <div className="text-[#F4A261] font-mono font-black text-base mt-0.5">
               {formatMetricNumber(points[hoveredIndex].value, true)}
             </div>
           </div>
         )}
       </div>
 
-      {/* Axis dates */}
-      <div className="flex justify-between items-center text-[11px] text-[#29232D]/70 px-4 pt-1 font-mono">
+      {/* Axis dates (large, clear, legible) */}
+      <div className="flex justify-between items-center text-sm sm:text-base text-[#29232D]/85 px-4 pt-2.5 font-mono font-bold">
         <span>{data[0]?.label}</span>
-        {data.length > 2 && <span className="opacity-70">{data[Math.floor(data.length / 2)]?.label}</span>}
+        {data.length > 2 && <span className="opacity-75">{data[Math.floor(data.length / 2)]?.label}</span>}
         <span>{data[data.length - 1]?.label}</span>
       </div>
 
-      <div className="mt-4 pt-3 text-[11px] text-[#29232D]/60 flex items-center justify-between border-t border-[#B9A3D4]/20 font-medium">
-        <span className="flex items-center gap-1.5 text-[#4B315F]">
-          <TrendingUp className="w-3.5 h-3.5 text-[#F4A261]" />
+      <div className="mt-5 pt-3.5 text-sm sm:text-base text-[#29232D]/75 flex items-center justify-between border-t border-[#B9A3D4]/20 font-semibold">
+        <span className="flex items-center gap-2 text-[#4B315F] font-bold">
+          <TrendingUp className="w-4.5 h-4.5 text-[#F4A261]" />
           <span>
             {growth >= 0 ? `نمو بمعدل تقريبي +${growth}%` : `تغير بمعدل ${growth}%`}
           </span>
         </span>
-        <span className="font-mono text-[#4B315F]">{data.length} فترات زمنية</span>
+        <span className="font-mono font-bold text-[#4B315F]">{data.length} فترات زمنية</span>
       </div>
     </div>
   );

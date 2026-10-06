@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info, CheckCircle2, RefreshCw, X, ShieldCheck } from 'lucide-react';
+import { Info, RefreshCw, X, ShieldCheck } from 'lucide-react';
 import { AIHealthStatus, clearAIStatusNotice } from '../services/aiService';
 
 interface AILimitBannerProps {
@@ -32,46 +32,46 @@ export const AILimitBanner: React.FC<AILimitBannerProps> = ({
     <aside
       role="status"
       aria-live="polite"
-      className="bg-[#FFF9F2] border border-[#F4A261] rounded-2xl p-4 shadow-2xs mx-4 lg:mx-8 mb-4 animate-fade-in no-print"
+      className="bg-[#FFF9F2] border border-[#F4A261] rounded-2xl p-4 sm:p-5 shadow-2xs mx-4 lg:mx-8 mb-4 animate-fade-in no-print"
     >
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         {/* Left message & status */}
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[#F4A261]/20 text-[#4B315F] flex items-center justify-center shrink-0 mt-0.5">
-            <Info className="w-4 h-4 text-[#F4A261]" />
+        <div className="flex items-start gap-3.5">
+          <div className="w-9 h-9 rounded-xl bg-[#F4A261]/25 text-[#4B315F] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+            <Info className="w-5 h-5 text-[#F4A261]" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#4B315F]">
+            <div className="flex items-center gap-2.5">
+              <span className="text-sm sm:text-base font-bold text-[#4B315F]">
                 {isAr ? 'تنبيه الخدمة الذكية' : 'Service Notice'}
               </span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 {isAr ? 'الأدوات الأساسية تعمل 100%' : 'Core tools 100% active'}
               </span>
             </div>
-            <p className="text-xs text-[#29232D] mt-1 leading-relaxed">
+            <p className="text-sm sm:text-base text-[#29232D] mt-1.5 leading-relaxed font-medium">
               {message}
             </p>
           </div>
         </div>
 
         {/* Right actions: Retry & Dismiss */}
-        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+        <div className="flex items-center gap-2.5 shrink-0 self-end sm:self-center">
           {onRetry && (
             <button
               onClick={onRetry}
               disabled={isRetrying}
-              className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-white border border-[#B9A3D4]/50 text-[#4B315F] hover:bg-[#FFF9F2] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 text-sm font-bold rounded-xl bg-white border border-[#B9A3D4]/50 text-[#4B315F] hover:bg-[#FFF9F2] transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-2xs"
             >
-              <RefreshCw className={`w-3 h-3 ${isRetrying ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isRetrying ? 'animate-spin' : ''}`} />
               <span>{isAr ? 'إعادة المحاولة' : 'Retry'}</span>
             </button>
           )}
 
           <button
             onClick={clearAIStatusNotice}
-            className="p-1 rounded-lg text-[#29232D]/50 hover:text-[#29232D] hover:bg-white/80 cursor-pointer"
+            className="p-1.5 rounded-lg text-[#29232D]/50 hover:text-[#29232D] hover:bg-white/80 cursor-pointer"
             title={isAr ? 'إغلاق التنبيه' : 'Dismiss notice'}
           >
             <X className="w-4 h-4" />

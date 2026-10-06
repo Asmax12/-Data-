@@ -21,7 +21,7 @@ export const BarChart: React.FC<BarChartProps> = ({
 
   if (!data || data.length === 0) {
     return (
-      <div className="p-8 text-center text-[#4B315F]/60 text-xs">
+      <div className="p-8 text-center text-[#4B315F]/70 text-base font-semibold">
         لا توجد بيانات كافية لعرض هذا المخطط
       </div>
     );
@@ -31,7 +31,7 @@ export const BarChart: React.FC<BarChartProps> = ({
 
   return (
     <div className="flex flex-col h-full justify-between">
-      <div className="space-y-2.5 pt-1">
+      <div className="space-y-3.5 pt-2">
         {data.map((item, idx) => {
           const ratio = Math.max((item.value / maxValue) * 100, 4);
           const isHovered = hoveredIndex === idx;
@@ -49,42 +49,42 @@ export const BarChart: React.FC<BarChartProps> = ({
           return (
             <div
               key={idx}
-              className={`group cursor-pointer rounded-xl p-2.5 transition-all duration-200 ${
+              className={`group cursor-pointer rounded-xl p-3.5 transition-all duration-200 ${
                 isSelected
-                  ? 'bg-[#4B315F]/10 ring-1 ring-[#4B315F] shadow-2xs'
+                  ? 'bg-[#4B315F]/10 ring-2 ring-[#4B315F] shadow-xs'
                   : isHovered
-                  ? 'bg-white/95 shadow-sm translate-x-0.5'
-                  : 'hover:bg-white/70'
+                  ? 'bg-white shadow-sm translate-x-1'
+                  : 'hover:bg-white/80'
               }`}
               onMouseEnter={() => setHoveredIndex(idx)}
               onMouseLeave={() => setHoveredIndex(null)}
               onClick={() => onBarClick?.(item.label)}
               title={`اضغط للتصفية حسب ${item.label}`}
             >
-              <div className="flex items-center justify-between text-xs mb-1.5 font-medium text-[#29232D]">
-                <div className="flex items-center gap-2 truncate">
+              <div className="flex items-center justify-between text-base mb-2.5 font-medium text-[#29232D]">
+                <div className="flex items-center gap-3 truncate">
                   <span
-                    className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
+                    className={`w-6 h-6 rounded-md flex items-center justify-center text-xs sm:text-sm font-mono font-bold shrink-0 ${
                       isSelected
                         ? 'bg-[#4B315F] text-[#FFF9F2]'
                         : idx === 0
                         ? 'bg-[#F4A261]/25 text-[#4B315F]'
-                        : 'bg-[#B9A3D4]/20 text-[#29232D]/70'
+                        : 'bg-[#B9A3D4]/25 text-[#29232D]/75'
                     }`}
                   >
-                    {isSelected ? <Check className="w-2.5 h-2.5" /> : idx + 1}
+                    {isSelected ? <Check className="w-3.5 h-3.5" /> : idx + 1}
                   </span>
-                  <span className="truncate max-w-[190px] font-semibold text-[#29232D]">
+                  <span className="truncate max-w-[230px] font-bold text-base text-[#29232D]">
                     {item.label}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 font-mono">
-                  <span className="font-bold text-[#4B315F] text-xs">
+                <div className="flex items-center gap-2.5 font-mono">
+                  <span className="font-black text-[#4B315F] text-base sm:text-lg">
                     {formatMetricNumber(item.value, true)}
                   </span>
                   {item.percentage !== undefined && (
-                    <span className="text-[10px] text-[#29232D]/50 bg-[#FFF9F2] px-1.5 py-0.5 rounded font-medium border border-[#B9A3D4]/20">
+                    <span className="text-xs sm:text-sm text-[#29232D]/80 bg-[#FFF9F2] px-2.5 py-0.5 rounded-md font-bold border border-[#B9A3D4]/30">
                       {item.percentage}%
                     </span>
                   )}
@@ -92,10 +92,10 @@ export const BarChart: React.FC<BarChartProps> = ({
               </div>
 
               {/* Progress track */}
-              <div className="w-full bg-[#B9A3D4]/15 rounded-full h-2.5 overflow-hidden p-0.5">
+              <div className="w-full bg-[#B9A3D4]/20 rounded-full h-3.5 overflow-hidden p-0.5">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ease-out ${barGradient} ${
-                    isHovered ? 'opacity-95 shadow-xs' : 'opacity-90'
+                    isHovered ? 'opacity-100 shadow-xs' : 'opacity-90'
                   }`}
                   style={{ width: `${ratio}%` }}
                 />
@@ -105,12 +105,12 @@ export const BarChart: React.FC<BarChartProps> = ({
         })}
       </div>
 
-      <div className="mt-4 pt-3 text-[11px] text-[#29232D]/60 flex items-center justify-between border-t border-[#B9A3D4]/20 font-medium">
-        <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#F4A261]" />
-          <span>اضغط على أي فئة للتركيز عليها وتصفية اللوحة</span>
+      <div className="mt-5 pt-3.5 text-sm sm:text-base text-[#29232D]/75 flex items-center justify-between border-t border-[#B9A3D4]/20 font-semibold">
+        <span className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#F4A261]" />
+          <span>اضغط على أي فئة لتصفية الداشبورد</span>
         </span>
-        <span className="font-mono text-[#4B315F]">{data.length} عناصر</span>
+        <span className="font-mono font-bold text-[#4B315F]">{data.length} عناصر</span>
       </div>
     </div>
   );

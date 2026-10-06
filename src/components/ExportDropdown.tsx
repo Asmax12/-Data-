@@ -140,9 +140,9 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isExporting}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-white border border-[#B9A3D4]/50 text-[#4B315F] hover:bg-[#FFF9F2] shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+        className="flex items-center gap-2 px-4.5 py-2.5 text-base font-bold rounded-xl bg-white border border-[#B9A3D4]/50 text-[#4B315F] hover:bg-[#FFF9F2] shadow-2xs transition-all cursor-pointer disabled:opacity-50"
       >
-        <Download className="w-3.5 h-3.5 text-[#F4A261]" />
+        <Download className="w-4 h-4 text-[#F4A261]" />
         <span>
           {isExporting
             ? isAr
@@ -152,50 +152,50 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
             ? 'تصدير'
             : 'Export'}
         </span>
-        <ChevronDown className="w-3 h-3 text-[#29232D]/50" />
+        <ChevronDown className="w-3.5 h-3.5 text-[#29232D]/50" />
       </button>
 
       {/* Success notification */}
       {exportSuccess && (
-        <div className="absolute top-full mt-1.5 right-0 z-50 bg-[#4B315F] text-[#FFF9F2] text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap flex items-center gap-1 animate-fade-in">
-          <Check className="w-3 h-3 text-[#F4A261]" />
+        <div className="absolute top-full mt-1.5 right-0 z-50 bg-[#4B315F] text-[#FFF9F2] text-xs sm:text-sm font-bold px-3 py-1.5 rounded-xl shadow-md whitespace-nowrap flex items-center gap-1.5 animate-fade-in">
+          <Check className="w-3.5 h-3.5 text-[#F4A261]" />
           <span>{exportSuccess}</span>
         </div>
       )}
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="export-menu absolute top-full mt-1.5 right-0 z-50 w-48 bg-white rounded-xl border border-[#B9A3D4]/40 shadow-lg py-1.5 text-xs text-[#29232D] animate-fade-in">
+        <div className="export-menu absolute top-full mt-2 right-0 z-50 w-56 bg-white rounded-2xl border border-[#B9A3D4]/40 shadow-xl py-2 text-sm sm:text-base text-[#29232D] animate-fade-in">
           {/* 1. Download as Image (PNG) */}
           <button
             onClick={handleExportPNG}
-            className="w-full px-3.5 py-2 text-right hover:bg-[#FFF9F2] flex items-center gap-2 cursor-pointer transition-colors"
+            className="w-full px-4 py-2.5 text-right hover:bg-[#FFF9F2] flex items-center gap-2.5 cursor-pointer transition-colors"
           >
-            <Image className="w-4 h-4 text-[#F4A261]" />
-            <span className="font-medium">
-              {isAr ? '🖼️ تحميل كصورة (PNG)' : '🖼️ Download as PNG'}
+            <Image className="w-4.5 h-4.5 text-[#F4A261]" />
+            <span className="font-bold">
+              {isAr ? 'تحميل كصورة (PNG)' : 'Download as PNG'}
             </span>
           </button>
 
           {/* 2. Download as real PDF */}
           <button
             onClick={handleExportPDF}
-            className="w-full px-3.5 py-2 text-right hover:bg-[#FFF9F2] flex items-center gap-2 cursor-pointer transition-colors"
+            className="w-full px-4 py-2.5 text-right hover:bg-[#FFF9F2] flex items-center gap-2.5 cursor-pointer transition-colors"
           >
-            <FileText className="w-4 h-4 text-[#E76F7A]" />
-            <span className="font-medium">
-              {isAr ? '📄 تحميل PDF' : '📄 Download PDF'}
+            <FileText className="w-4.5 h-4.5 text-[#E76F7A]" />
+            <span className="font-bold">
+              {isAr ? 'تحميل ملف PDF' : 'Download PDF'}
             </span>
           </button>
 
           {/* 3. Print Dashboard */}
           <button
             onClick={handlePrint}
-            className="w-full px-3.5 py-2 text-right hover:bg-[#FFF9F2] flex items-center gap-2 cursor-pointer transition-colors border-t border-[#B9A3D4]/20"
+            className="w-full px-4 py-2.5 text-right hover:bg-[#FFF9F2] flex items-center gap-2.5 cursor-pointer transition-colors border-t border-[#B9A3D4]/20"
           >
-            <Printer className="w-4 h-4 text-[#4B315F]" />
-            <span className="font-medium">
-              {isAr ? '🖨️ طباعة Dashboard' : '🖨️ Print Dashboard'}
+            <Printer className="w-4.5 h-4.5 text-[#4B315F]" />
+            <span className="font-bold">
+              {isAr ? 'طباعة لوحة التحكم' : 'Print Dashboard'}
             </span>
           </button>
         </div>

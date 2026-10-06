@@ -156,16 +156,16 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
     <div className="max-w-4xl mx-auto px-4 py-8 lg:py-14 space-y-10">
       {/* Return to Active Dashboard Banner if one exists */}
       {hasActiveDataset && onReturnToDashboard && (
-        <div className="bg-white/80 border border-[#F4A261] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs animate-fade-in">
-          <div className="flex items-center gap-3 text-right">
-            <div className="w-8 h-8 rounded-xl bg-[#4B315F] text-[#FFF9F2] flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4 text-[#F4A261]" />
+        <div className="bg-white/85 border border-[#F4A261] rounded-2xl p-4.5 flex flex-col sm:flex-row items-center justify-between gap-3.5 shadow-xs animate-fade-in">
+          <div className="flex items-center gap-3.5 text-right">
+            <div className="w-10 h-10 rounded-xl bg-[#4B315F] text-[#FFF9F2] flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5 text-[#F4A261]" />
             </div>
             <div>
-              <p className="text-xs font-bold text-[#4B315F]">
+              <p className="text-sm sm:text-base font-bold text-[#4B315F]">
                 {isAr ? 'لديك تحليل ولوحة بيانات نشطة محفوظة!' : 'You have an active dashboard ready!'}
               </p>
-              <p className="text-[11px] text-[#29232D]/60">
+              <p className="text-xs sm:text-sm text-[#29232D]/70 font-medium">
                 {isAr
                   ? 'يمكنك متابعة العمل عليها أو إدخال بيانات أخرى جديدة أدناه.'
                   : 'Resume where you left off or upload new data below.'}
@@ -174,51 +174,51 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
           </div>
           <button
             onClick={onReturnToDashboard}
-            className="px-4 py-2 text-xs font-bold rounded-xl bg-[#4B315F] text-[#FFF9F2] hover:bg-[#4B315F]/90 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0"
+            className="px-5 py-2.5 text-sm sm:text-base font-bold rounded-xl bg-[#4B315F] text-[#FFF9F2] hover:bg-[#4B315F]/90 transition-all flex items-center gap-2 shadow-2xs cursor-pointer shrink-0"
           >
             <span>{isAr ? 'العودة إلى لوحة البيانات' : 'Return to Dashboard'}</span>
-            {isAr ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
+            {isAr ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
           </button>
         </div>
       )}
 
       {/* Hero Headline and description */}
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#4B315F] tracking-tight leading-tight">
+      <div className="text-center space-y-4.5 max-w-2xl mx-auto">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#4B315F] tracking-tight leading-tight">
           {isAr ? 'عندك بيانات؟ سيب الباقي علينا.' : 'Got Data? Leave the rest to us.'}
         </h1>
-        <p className="text-base sm:text-lg text-[#29232D]/80 leading-relaxed font-normal">
+        <p className="text-lg sm:text-2xl text-[#29232D]/85 leading-relaxed font-normal">
           {isAr
             ? 'ارفع بياناتك أو اكتبها بطريقتك، وإحنا ننظمها ونحللها ونحوّلها لداشبورد واضحة من غير ما تحتاج تعرف Excel.'
             : 'Upload your data or type it in your own words. We clean, organize, and turn it into a clear interactive dashboard without you needing to know Excel.'}
         </p>
 
         {/* Mode Switcher */}
-        <div className="flex items-center justify-center gap-2 pt-2">
+        <div className="flex items-center justify-center gap-3.5 pt-2">
           <button
             onClick={() => setInputMode('upload')}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+            className={`px-6 py-3 text-base sm:text-lg font-bold rounded-xl transition-all cursor-pointer ${
               inputMode === 'upload'
-                ? 'bg-[#4B315F] text-[#FFF9F2] shadow-sm'
+                ? 'bg-[#4B315F] text-[#FFF9F2] shadow-xs'
                 : 'bg-white/80 text-[#29232D] hover:bg-white border border-[#B9A3D4]/40'
             }`}
           >
-            <span className="flex items-center gap-1.5">
-              <Upload className="w-4 h-4" />
+            <span className="flex items-center gap-2.5">
+              <Upload className="w-5 h-5" />
               {isAr ? 'ابدأ التحليل' : 'Start Analysis (Upload)'}
             </span>
           </button>
 
           <button
             onClick={() => setInputMode('manual')}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all cursor-pointer ${
+            className={`px-6 py-3 text-base sm:text-lg font-bold rounded-xl transition-all cursor-pointer ${
               inputMode === 'manual'
-                ? 'bg-[#4B315F] text-[#FFF9F2] shadow-sm'
+                ? 'bg-[#4B315F] text-[#FFF9F2] shadow-xs'
                 : 'bg-white/80 text-[#29232D] hover:bg-white border border-[#B9A3D4]/40'
             }`}
           >
-            <span className="flex items-center gap-1.5">
-              <Table className="w-4 h-4" />
+            <span className="flex items-center gap-2.5">
+              <Table className="w-5 h-5" />
               {isAr ? 'أدخل البيانات يدويًا' : 'Enter Data Manually'}
             </span>
           </button>
@@ -227,11 +227,11 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
 
       {/* Error alert */}
       {errorMessage && (
-        <div className="bg-[#E76F7A]/15 border border-[#E76F7A] text-[#29232D] px-4 py-3 rounded-xl text-sm flex items-center justify-between">
-          <span>{errorMessage}</span>
+        <div className="bg-[#E76F7A]/15 border border-[#E76F7A] text-[#29232D] px-4.5 py-3 rounded-xl text-base flex items-center justify-between">
+          <span className="font-medium">{errorMessage}</span>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-xs font-semibold underline cursor-pointer text-[#4B315F]"
+            className="text-sm font-bold underline cursor-pointer text-[#4B315F]"
           >
             {isAr ? 'إغلاق' : 'Dismiss'}
           </button>
@@ -239,7 +239,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
       )}
 
       {/* Main Box: File Upload or Manual Input */}
-      <div className="bg-white rounded-2xl border border-[#B9A3D4]/40 shadow-xs p-6 sm:p-8 relative overflow-hidden transition-all">
+      <div className="bg-white rounded-2xl border border-[#B9A3D4]/40 shadow-xs p-6 sm:p-9 relative overflow-hidden transition-all">
         {inputMode === 'upload' ? (
           <div
             className={`border-2 border-dashed rounded-xl p-8 sm:p-12 text-center transition-all cursor-pointer ${
@@ -265,39 +265,39 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
               }}
             />
 
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-[#4B315F]/10 text-[#4B315F] flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4.5">
+              <div className="w-16 h-16 rounded-2xl bg-[#4B315F]/10 text-[#4B315F] flex items-center justify-center">
                 {isProcessing ? (
-                  <div className="w-6 h-6 border-2 border-[#4B315F] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-7 h-7 border-3 border-[#4B315F] border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Upload className="w-7 h-7" />
+                  <Upload className="w-8 h-8" />
                 )}
               </div>
 
               <div>
-                <p className="text-base font-bold text-[#29232D] mb-1">
+                <p className="text-lg sm:text-xl font-bold text-[#29232D] mb-1.5">
                   {isAr
                     ? 'اسحب ملف Excel أو CSV هنا، أو اضغط للاختيار'
                     : 'Drop your Excel or CSV file here, or click to browse'}
                 </p>
-                <p className="text-xs text-[#29232D]/60">
+                <p className="text-sm sm:text-base text-[#29232D]/70 font-medium">
                   {isAr
                     ? 'يدعم صيغ .xlsx و .xls و .csv و .txt — بنظبط الأعمدة والأرقام تلقائيًا'
                     : 'Supports .xlsx, .xls, .csv, .txt — columns & numbers auto-cleaned'}
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 text-xs text-[#4B315F]/80 pt-2 font-medium">
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#F4A261]" />
+              <div className="flex flex-wrap items-center justify-center gap-5 text-sm text-[#4B315F] pt-2 font-bold">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#F4A261]" />
                   {isAr ? 'كشف الأعمدة الذكي' : 'Smart Column Detection'}
                 </span>
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#F4A261]" />
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#F4A261]" />
                   {isAr ? 'تنظيف القيم المفقودة' : 'Auto Cleaning'}
                 </span>
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#F4A261]" />
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#F4A261]" />
                   {isAr ? 'داشبورد فورية' : 'Instant Dashboard'}
                 </span>
               </div>
@@ -305,9 +305,9 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
           </div>
         ) : (
           /* Manual Input Mode */
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
-              <label className="block text-xs font-bold text-[#29232D] mb-1.5">
+              <label className="block text-base font-bold text-[#29232D] mb-2">
                 {isAr ? 'الصق جدولك أو اكتب بياناتك كنص عادي:' : 'Paste table or raw text:'}
               </label>
               <textarea
@@ -319,33 +319,33 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
                     ? 'العميل, المدينة, المنتج, السعر, الكمية, التاريخ\nأحمد, القاهرة, لابتوب, 30000, 2, 2024-01-15\nسارة, الإسكندرية, سماعة, 2500, 3, 2024-01-18...'
                     : 'Customer, City, Product, Price, Quantity, Date\nAhmed, Cairo, Laptop, 30000, 2, 2024-01-15\nSara, Alexandria, Headset, 2500, 3, 2024-01-18...'
                 }
-                className="w-full p-3.5 text-xs font-mono bg-[#FFF9F2] border border-[#B9A3D4]/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4B315F] text-[#29232D]"
+                className="w-full p-4 text-sm sm:text-base font-mono bg-[#FFF9F2] border border-[#B9A3D4]/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4B315F] text-[#29232D] font-medium"
               />
             </div>
 
             {/* Optional Natural Prompt */}
             <div>
-              <label className="block text-xs font-bold text-[#4B315F] mb-1">
+              <label className="block text-base font-bold text-[#4B315F] mb-1.5">
                 {isAr ? 'عايز تعمل إيه بالبيانات؟ (بلغتك العادية):' : 'What do you want to achieve? (natural language):'}
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-2.5">
                 <input
                   type="text"
                   value={userPrompt}
                   onChange={(e) => setUserPrompt(e.target.value)}
-                  className="flex-1 px-3.5 py-2 text-xs bg-white border border-[#B9A3D4]/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4B315F] text-[#29232D]"
+                  className="flex-1 px-4 py-2.5 text-base bg-white border border-[#B9A3D4]/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4B315F] text-[#29232D] font-medium"
                 />
                 <button
                   onClick={handleManualSubmit}
                   disabled={isProcessing}
-                  className="px-5 py-2 bg-[#4B315F] text-[#FFF9F2] text-xs font-bold rounded-xl hover:bg-[#4B315F]/90 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-6 py-2.5 bg-[#4B315F] text-[#FFF9F2] text-base font-bold rounded-xl hover:bg-[#4B315F]/90 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {isProcessing ? (
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
                       <span>{isAr ? 'تنظيم وتحليل' : 'Process & Analyze'}</span>
-                      {isAr ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                      {isAr ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                     </>
                   )}
                 </button>
@@ -356,39 +356,39 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
       </div>
 
       {/* 1-Click Ready Sample Datasets */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-[#4B315F] flex items-center gap-2">
-            <Zap className="w-4 h-4 text-[#F4A261]" />
+          <h2 className="text-base sm:text-lg font-bold text-[#4B315F] flex items-center gap-2">
+            <Zap className="w-5 h-5 text-[#F4A261]" />
             {isAr ? 'أو جرب بنقرة واحدة على بيانات جاهزة:' : 'Or try with 1-click sample data:'}
           </h2>
-          <span className="text-xs text-[#29232D]/60">
+          <span className="text-sm text-[#29232D]/70 font-semibold">
             {isAr ? 'جاهزة للاختبار الفوري' : 'Ready for instant demo'}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {SAMPLE_DATASETS.map((sample) => (
             <button
               key={sample.id}
               onClick={() => handleLoadSample(sample.id)}
               disabled={isProcessing}
-              className="text-right p-4 rounded-xl bg-white border border-[#B9A3D4]/30 hover:border-[#4B315F] hover:shadow-sm transition-all text-start cursor-pointer group disabled:opacity-50"
+              className="text-right p-5 rounded-xl bg-white border border-[#B9A3D4]/30 hover:border-[#4B315F] hover:shadow-sm transition-all text-start cursor-pointer group disabled:opacity-50"
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-[#4B315F] group-hover:text-[#F4A261] transition-colors">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-base font-bold text-[#4B315F] group-hover:text-[#F4A261] transition-colors">
                   {isAr ? sample.titleAr : sample.titleEn}
                 </span>
-                <span className="text-[10px] bg-[#FFF9F2] text-[#4B315F] border border-[#B9A3D4]/30 px-2 py-0.5 rounded-md font-medium">
+                <span className="text-xs bg-[#FFF9F2] text-[#4B315F] border border-[#B9A3D4]/30 px-2.5 py-0.5 rounded-md font-bold">
                   {sample.category}
                 </span>
               </div>
-              <p className="text-xs text-[#29232D]/70 line-clamp-2 leading-relaxed">
+              <p className="text-sm text-[#29232D]/75 line-clamp-2 leading-relaxed font-medium">
                 {isAr ? sample.descriptionAr : sample.descriptionEn}
               </p>
-              <div className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-[#4B315F]">
+              <div className="mt-3.5 flex items-center gap-1.5 text-sm font-bold text-[#4B315F]">
                 <span>{isAr ? 'تحميل وعرض الداشبورد' : 'Load and preview'}</span>
-                {isAr ? <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" /> : <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />}
+                {isAr ? <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" /> : <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />}
               </div>
             </button>
           ))}
