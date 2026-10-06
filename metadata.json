@@ -1,0 +1,8 @@
+{
+  "name": "DataMate",
+  "description": "Friendly, zero-code data analysis and automated dashboard builder. Upload your data or paste plain text, and DataMate organizes, cleans, analyzes, and builds a clean interactive dashboard with natural language insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
