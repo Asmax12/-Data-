@@ -37,37 +37,37 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/45 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-black/45 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col border overflow-hidden animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col border overflow-hidden animate-in zoom-in-95 duration-200"
         style={{ borderColor: theme.colors.border }}
       >
         {/* Header */}
         <div
-          className="p-5 sm:p-6 border-b flex items-start justify-between gap-4"
+          className="p-3.5 sm:p-6 border-b flex items-start justify-between gap-2.5 sm:gap-4"
           style={{
             backgroundColor: `${theme.colors.bg}`,
             borderColor: theme.colors.border,
           }}
         >
-          <div className="flex items-start gap-3.5">
+          <div className="flex items-start gap-2.5 sm:gap-3.5">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 shadow-xs"
               style={{
                 backgroundColor: theme.colors.primary,
                 color: '#FFF9F2',
               }}
             >
-              <Lightbulb className="w-6 h-6 stroke-[2.2]" style={{ color: theme.colors.secondary }} />
+              <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" style={{ color: theme.colors.secondary }} />
             </div>
             <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-xl sm:text-2xl font-black" style={{ color: theme.colors.textPrimary }}>
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h3 className="text-base sm:text-2xl font-black" style={{ color: theme.colors.textPrimary }}>
                   {isAr ? 'افهم الرقم — محقق البيانات' : 'DataMate Investigator'}
                 </h3>
                 {result?.isAiEnriched ? (
                   <span
-                    className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full"
+                    className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full"
                     style={{
                       backgroundColor: `${theme.colors.secondary}25`,
                       color: theme.colors.primary,
@@ -78,7 +78,7 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
                   </span>
                 ) : (
                   <span
-                    className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full border"
+                    className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full border"
                     style={{
                       backgroundColor: theme.colors.background,
                       color: theme.colors.primary,
@@ -90,7 +90,7 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-sm sm:text-base font-medium mt-1" style={{ color: `${theme.colors.textPrimary}BF` }}>
+              <p className="text-xs sm:text-base font-medium mt-0.5 sm:mt-1" style={{ color: `${theme.colors.textPrimary}BF` }}>
                 {isAr
                   ? 'لماذا يحدث هذا الرقم؟ تحليل الأسباب والعوامل المؤثرة بدلاً من مجرد عرض القيمة.'
                   : 'Understand WHY this number behaves this way based on evidence in your data.'}
@@ -100,7 +100,7 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-black/5 transition-colors cursor-pointer shrink-0"
+            className="p-1.5 sm:p-2 rounded-xl hover:bg-black/5 transition-colors cursor-pointer shrink-0"
             style={{ color: `${theme.colors.textPrimary}99` }}
             title={isAr ? 'إغلاق' : 'Close'}
           >
@@ -111,7 +111,7 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
         {/* Quick subject selector pills */}
         {availableSubjects.length > 1 && onSelectSubject && (
           <div
-            className="px-5 sm:px-6 py-2.5 border-b flex items-center gap-2 overflow-x-auto no-scrollbar"
+            className="px-3.5 sm:px-6 py-2 sm:py-2.5 border-b flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar"
             style={{
               backgroundColor: theme.colors.surface,
               borderColor: theme.colors.border,
@@ -126,7 +126,7 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
                 <button
                   key={idx}
                   onClick={() => onSelectSubject(sub)}
-                  className={`px-3 py-1 text-xs sm:text-sm font-bold rounded-lg transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1 text-xs sm:text-sm font-bold rounded-lg transition-all shrink-0 cursor-pointer flex items-center gap-1 sm:gap-1.5 ${
                     isActive ? 'shadow-2xs ring-1' : 'hover:bg-black/5'
                   }`}
                   style={{
@@ -147,7 +147,7 @@ export const InvestigatorModal: React.FC<InvestigatorModalProps> = ({
 
         {/* Modal Body */}
         <div
-          className="p-5 sm:p-6 overflow-y-auto space-y-5.5 flex-1"
+          className="p-3.5 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5.5 flex-1"
           style={{ backgroundColor: theme.colors.surface }}
         >
           {isLoading ? (

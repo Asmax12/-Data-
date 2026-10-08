@@ -181,43 +181,43 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-7 space-y-8 animate-fade-in">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-7 space-y-6 sm:space-y-8 animate-fade-in">
       {/* 1. TOP CONTROL & CONTEXT BAR */}
       <div
-        className="no-print p-5 sm:p-6 rounded-2xl border flex flex-wrap items-center justify-between gap-4 shadow-xs"
+        className="no-print p-4 sm:p-6 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs"
         style={{
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-xs shrink-0"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shadow-xs shrink-0"
             style={{
               backgroundColor: theme.colors.primary,
               color: '#FFF9F2',
             }}
           >
-            <FileSpreadsheet className="w-6 h-6" style={{ color: theme.colors.secondary }} />
+            <FileSpreadsheet className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: theme.colors.secondary }} />
           </div>
           <div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <h1
-                className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight"
+                className="text-xl sm:text-3xl lg:text-4xl font-black tracking-tight"
                 style={{ color: theme.colors.primary }}
               >
                 {dataset.name}
               </h1>
               {activeFilter && (
                 <span
-                  className="flex items-center gap-1.5 text-sm sm:text-base font-bold px-3.5 py-1.5 rounded-full border"
+                  className="flex items-center gap-1.5 text-xs sm:text-base font-bold px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border"
                   style={{
                     color: theme.colors.primary,
                     backgroundColor: `${theme.colors.primary}18`,
                     borderColor: `${theme.colors.primary}33`,
                   }}
                 >
-                  <Filter className="w-4 h-4" style={{ color: theme.colors.secondary }} />
+                  <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.colors.secondary }} />
                   <span>
                     {activeFilter.column}: <strong>{activeFilter.value}</strong>
                   </span>
@@ -226,19 +226,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     className="mr-1 cursor-pointer opacity-75 hover:opacity-100"
                     title={isAr ? 'إلغاء التصفية' : 'Clear filter'}
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                 </span>
               )}
             </div>
             <div
-              className="flex items-center gap-3 text-sm sm:text-base mt-1 font-medium"
+              className="flex items-center gap-2 sm:gap-3 text-xs sm:text-base mt-1 font-medium"
               style={{ color: `${theme.colors.textPrimary}B8` }}
             >
               <span className="font-bold">{filteredRows.length} {isAr ? 'سجل مكتمل' : 'records'}</span>
               <span>·</span>
               <span className="text-emerald-700 flex items-center gap-1.5 font-bold">
-                <CheckCircle2 className="w-4 h-4" />
+                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 {isAr ? 'بيانات منظمة ومحسوبة' : 'Clean & calculated'}
               </span>
             </div>
@@ -246,32 +246,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Right Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
           {/* Edit button */}
           <button
             onClick={onOpenEditModal}
-            className="flex items-center gap-2 px-5 py-2.5 text-base font-bold rounded-xl shadow-2xs transition-all cursor-pointer"
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base font-bold rounded-xl shadow-2xs transition-all cursor-pointer"
             style={{
               backgroundColor: theme.colors.primary,
               color: '#FFF9F2',
             }}
             title={isAr ? 'تعديل البيانات، المخططات، والمؤشرات' : 'Edit data, charts & KPIs'}
           >
-            <Edit3 className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
+            <Edit3 className="w-4 h-4 sm:w-4.5 sm:h-4.5" style={{ color: theme.colors.secondary }} />
             <span>{isAr ? 'تعديل' : 'Edit'}</span>
           </button>
 
           {/* Export Dropdown with real PDF, PNG, Print */}
-          <ExportDropdown
-            language={language}
-            targetElementId="datamate-printable-dashboard"
-            datasetName={dataset.name}
-          />
+          <div className="flex-1 sm:flex-none">
+            <ExportDropdown
+              language={language}
+              targetElementId="datamate-printable-dashboard"
+              datasetName={dataset.name}
+            />
+          </div>
 
           {/* Simplify Toggle */}
           <button
             onClick={onToggleSimplify}
-            className="flex items-center gap-2 px-5 py-2.5 text-base font-bold rounded-xl border transition-all cursor-pointer"
+            className="flex-1 sm:flex-none justify-center flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base font-bold rounded-xl border transition-all cursor-pointer"
             style={{
               backgroundColor: isSimplified ? theme.colors.primary : theme.colors.surface,
               color: isSimplified ? '#FFF9F2' : theme.colors.textPrimary,
@@ -279,9 +281,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             }}
           >
             {isSimplified ? (
-              <Minimize2 className="w-4.5 h-4.5" />
+              <Minimize2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             ) : (
-              <Maximize2 className="w-4.5 h-4.5" style={{ color: theme.colors.primary }} />
+              <Maximize2 className="w-4 h-4 sm:w-4.5 sm:h-4.5" style={{ color: theme.colors.primary }} />
             )}
             <span>{isSimplified ? (isAr ? 'مبسط (مفعّل)' : 'Simplified') : (isAr ? 'تبسيط' : 'Simplify')}</span>
           </button>
@@ -295,7 +297,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               borderColor: theme.colors.border,
               color: theme.colors.textPrimary,
             }}
-            title={isAr ? 'تصدير البيانات كـ CSV' : 'Export clean CSV'}
+            title={isAr ? 'تعديل البيانات كـ CSV' : 'Export clean CSV'}
           >
             <Download className="w-4.5 h-4.5" style={{ color: theme.colors.primary }} />
             <span>CSV</span>
@@ -305,21 +307,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 1.5. DATAMATE INVESTIGATOR QUICK BAR */}
       <div
-        className="no-print p-5 sm:p-6 rounded-2xl border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all"
+        className="no-print p-4 sm:p-6 rounded-2xl border shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3.5 sm:gap-4 transition-all"
         style={{
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
         }}
       >
-        <div className="flex items-start sm:items-center gap-3.5">
+        <div className="flex items-start sm:items-center gap-3 sm:gap-3.5">
           <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs"
             style={{
               backgroundColor: theme.colors.primary,
               color: '#FFF9F2',
             }}
           >
-            <Lightbulb className="w-6 h-6 stroke-[2.2]" style={{ color: theme.colors.secondary }} />
+            <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" style={{ color: theme.colors.secondary }} />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -345,7 +347,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Quick chips to investigate immediately */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <span className="text-xs font-bold shrink-0" style={{ color: `${theme.colors.textPrimary}99` }}>
             {isAr ? 'فحص سريع:' : 'Quick analyze:'}
           </span>
@@ -353,7 +355,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               key={i}
               onClick={() => handleTriggerInvestigate(sub)}
-              className="px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer shadow-2xs hover:shadow-xs flex items-center gap-1.5 hover:scale-105"
+              className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer shadow-2xs hover:shadow-xs flex items-center gap-1.5 hover:scale-105"
               style={{
                 backgroundColor: theme.colors.background,
                 borderColor: theme.colors.border,
@@ -374,7 +376,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ============================================================== */}
       {/* CAPTURED & PRINTABLE REPORT CONTAINER */}
       {/* ============================================================== */}
-      <div id="datamate-printable-dashboard" className="space-y-10 dashboard-printable">
+      <div id="datamate-printable-dashboard" className="space-y-6 sm:space-y-10 dashboard-printable">
         {/* Printable report header */}
         <div
           className="hidden print:block border-b-2 pb-4 mb-6"
@@ -395,25 +397,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* 2. SECTION: KEY METRICS */}
-        <section className="space-y-4 break-inside-avoid">
+        <section className="space-y-3.5 sm:space-y-4 break-inside-avoid">
           <div className="flex items-center justify-between px-1">
             <h2
-              className="text-lg sm:text-xl font-black uppercase tracking-wider flex items-center gap-2.5"
+              className="text-base sm:text-xl font-black uppercase tracking-wider flex items-center gap-2 sm:gap-2.5"
               style={{ color: theme.colors.primary }}
             >
               <span
-                className="w-3 h-3 rounded-full"
+                className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full"
                 style={{ backgroundColor: theme.colors.primary }}
               />
               <span>{isAr ? 'المؤشرات الرئيسية' : 'Key Metrics'}</span>
             </h2>
-            <span className="text-sm sm:text-base font-bold" style={{ color: `${theme.colors.textPrimary}B0` }}>
+            <span className="text-xs sm:text-base font-bold" style={{ color: `${theme.colors.textPrimary}B0` }}>
               {isAr ? 'حسابات وإجماليات دقيقة' : 'Exact Calculations'}
             </span>
           </div>
 
           <div
-            className={`grid gap-6 ${
+            className={`grid gap-3.5 sm:gap-6 ${
               isSimplified
                 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
                 : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
@@ -444,7 +446,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               return (
                 <div
                   key={kpi.id}
-                  className="rounded-2xl border hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between break-inside-avoid p-6 sm:p-7"
+                  className="rounded-2xl border hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col justify-between break-inside-avoid p-4.5 sm:p-7"
                   style={{
                     backgroundColor: theme.colors.surface,
                     borderColor: theme.colors.border,
@@ -457,30 +459,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     style={{ background: topAccent }}
                   />
 
-                  <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
                     <span
-                      className="text-base sm:text-lg font-bold truncate max-w-[210px]"
+                      className="text-sm sm:text-lg font-bold truncate max-w-[210px]"
                       style={{ color: theme.colors.textPrimary }}
                     >
                       {isAr ? kpi.labelAr : kpi.label}
                     </span>
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
                       style={iconBadgeStyle}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-4.5 h-4.5 sm:w-5 sm:h-5" />
                     </div>
                   </div>
 
                   <div>
                     <div
-                      className="text-4xl sm:text-5xl lg:text-[3rem] font-black font-mono tracking-tight leading-none my-1"
+                      className="text-3xl min-[380px]:text-4xl sm:text-5xl lg:text-[3rem] font-black font-mono tracking-tight leading-none my-1 break-words sm:break-normal"
                       style={{ color: theme.colors.primary }}
                     >
                       {kpi.formattedValue}
                     </div>
                     <div
-                      className="text-sm sm:text-base mt-3 font-medium flex items-center justify-between gap-1.5 flex-wrap"
+                      className="text-xs sm:text-base mt-2.5 sm:mt-3 font-medium flex items-center justify-between gap-1.5 flex-wrap"
                       style={{ color: `${theme.colors.textPrimary}CC` }}
                     >
                       <span>{isAr ? kpi.subtitleAr : kpi.subtitle}</span>
@@ -531,7 +533,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div
-              className={`grid gap-6 break-inside-avoid ${
+              className={`grid gap-4 sm:gap-6 break-inside-avoid ${
                 primaryCharts.length === 1 || isSimplified
                   ? 'grid-cols-1'
                   : 'grid-cols-1 lg:grid-cols-2'
@@ -540,7 +542,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {primaryCharts.map((chart) => (
                 <div
                   key={chart.id}
-                  className="rounded-2xl border p-6 sm:p-7 flex flex-col justify-between break-inside-avoid shadow-xs"
+                  className="rounded-2xl border p-4 sm:p-7 flex flex-col justify-between break-inside-avoid shadow-xs"
                   style={{
                     backgroundColor: theme.colors.surface,
                     borderColor: theme.colors.border,
@@ -548,26 +550,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   }}
                 >
                   <div
-                    className="flex items-center justify-between pb-3.5 mb-3.5 border-b gap-3 flex-wrap"
+                    className="flex items-center justify-between pb-3 sm:pb-3.5 mb-3 sm:mb-3.5 border-b gap-2.5 sm:gap-3 flex-wrap"
                     style={{ borderColor: theme.colors.border }}
                   >
                     <div>
                       <h3
-                        className="text-lg sm:text-xl font-bold"
+                        className="text-base sm:text-xl font-bold"
                         style={{ color: theme.colors.primary }}
                       >
                         {isAr ? chart.titleAr : chart.titleEn}
                       </h3>
                       {chart.descriptionAr && (
                         <p
-                          className="text-sm sm:text-base mt-1 font-medium"
+                          className="text-xs sm:text-base mt-1 font-medium"
                           style={{ color: `${theme.colors.textPrimary}BF` }}
                         >
                           {isAr ? chart.descriptionAr : chart.descriptionEn}
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         onClick={() =>
                           handleTriggerInvestigate({
@@ -578,7 +580,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             metricKey: chart.metricKey,
                           })
                         }
-                        className="no-print inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg border transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                        className="no-print inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-bold rounded-lg border transition-all cursor-pointer shadow-2xs hover:shadow-xs"
                         style={{
                           backgroundColor: theme.colors.surface,
                           borderColor: theme.colors.border,
@@ -590,7 +592,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <span>{isAr ? 'افهم الرسم' : 'Analyze'}</span>
                       </button>
                       <span
-                        className="text-xs sm:text-sm uppercase font-bold px-3 py-1.5 rounded-lg border"
+                        className="text-xs sm:text-sm uppercase font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border"
                         style={{
                           backgroundColor: theme.colors.background,
                           borderColor: theme.colors.border,
@@ -657,19 +659,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <section className="space-y-4 break-inside-avoid">
             <div className="flex items-center justify-between px-1">
               <h2
-                className="text-lg sm:text-xl font-black uppercase tracking-wider flex items-center gap-2.5"
+                className="text-base sm:text-xl font-black uppercase tracking-wider flex items-center gap-2 sm:gap-2.5"
                 style={{ color: theme.colors.primary }}
               >
-                <PieChart className="w-5 h-5" style={{ color: theme.colors.accent }} />
+                <PieChart className="w-4.5 h-4.5 sm:w-5 sm:h-5" style={{ color: theme.colors.accent }} />
                 <span>{isAr ? 'التحليل التفصيلي والتوزيع' : 'Detailed Analysis'}</span>
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {supportingCharts.map((chart) => (
                 <div
                   key={chart.id}
-                  className="rounded-2xl border p-6 sm:p-7 flex flex-col justify-between break-inside-avoid shadow-xs"
+                  className="rounded-2xl border p-4 sm:p-7 flex flex-col justify-between break-inside-avoid shadow-xs"
                   style={{
                     backgroundColor: theme.colors.surface,
                     borderColor: theme.colors.border,
@@ -677,19 +679,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   }}
                 >
                   <div
-                    className="flex items-center justify-between pb-3.5 mb-3.5 border-b gap-3 flex-wrap"
+                    className="flex items-center justify-between pb-3 sm:pb-3.5 mb-3 sm:mb-3.5 border-b gap-2.5 sm:gap-3 flex-wrap"
                     style={{ borderColor: theme.colors.border }}
                   >
                     <div>
                       <h3
-                        className="text-lg sm:text-xl font-bold"
+                        className="text-base sm:text-xl font-bold"
                         style={{ color: theme.colors.primary }}
                       >
                         {isAr ? chart.titleAr : chart.titleEn}
                       </h3>
                       {chart.descriptionAr && (
                         <p
-                          className="text-sm sm:text-base mt-1 font-medium"
+                          className="text-xs sm:text-base mt-1 font-medium"
                           style={{ color: `${theme.colors.textPrimary}BF` }}
                         >
                           {isAr ? chart.descriptionAr : chart.descriptionEn}
@@ -706,7 +708,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           metricKey: chart.metricKey,
                         })
                       }
-                      className="no-print inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg border transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+                      className="no-print inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-bold rounded-lg border transition-all cursor-pointer shadow-2xs hover:shadow-xs"
                       style={{
                         backgroundColor: theme.colors.surface,
                         borderColor: theme.colors.border,
@@ -758,7 +760,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* 5. SECTION: "WHAT SHOULD I KNOW?" (إيه المهم اللي لازم تعرفه؟) */}
         <section
-          className="rounded-2xl border p-7 sm:p-8 space-y-5 break-inside-avoid shadow-xs"
+          className="rounded-2xl border p-4.5 sm:p-8 space-y-4 sm:space-y-5 break-inside-avoid shadow-xs"
           style={{
             background: `linear-gradient(135deg, ${theme.colors.background} 0%, ${theme.colors.surface} 50%, ${theme.colors.background} 100%)`,
             borderColor: `${theme.colors.secondary}66`,
@@ -769,21 +771,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className="flex items-center justify-between pb-3 border-b"
             style={{ borderColor: `${theme.colors.secondary}40` }}
           >
-            <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-3 sm:gap-3.5">
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-2xs"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-2xs shrink-0"
                 style={{
                   backgroundColor: theme.colors.secondary,
                   color: '#FFF9F2',
                 }}
               >
-                <Lightbulb className="w-5 h-5" style={{ color: '#FFF9F2' }} />
+                <Lightbulb className="w-4.5 h-4.5 sm:w-5 sm:h-5" style={{ color: '#FFF9F2' }} />
               </div>
               <div>
-                <h3 className="text-xl sm:text-2xl font-black" style={{ color: theme.colors.primary }}>
+                <h3 className="text-lg sm:text-2xl font-black" style={{ color: theme.colors.primary }}>
                   {isAr ? 'إيه المهم اللي لازم تعرفه؟' : 'What should I know?'}
                 </h3>
-                <p className="text-sm sm:text-base font-medium mt-0.5" style={{ color: `${theme.colors.textPrimary}CC` }}>
+                <p className="text-xs sm:text-base font-medium mt-0.5" style={{ color: `${theme.colors.textPrimary}CC` }}>
                   {isAr
                     ? 'أهم 3–5 استنتاجات عملية مصاغة بلغة طبيعية ومباشرة'
                     : 'Actionable takeaways summarized in plain language'}
@@ -803,7 +805,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4.5 pt-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4.5 pt-1">
             {insights.map((item, idx) => {
               const badgeStyle =
                 idx === 0
@@ -821,20 +823,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               return (
                 <div
                   key={item.id}
-                  className="rounded-xl p-5 border flex items-start gap-4 shadow-2xs hover:shadow-xs transition-shadow break-inside-avoid"
+                  className="rounded-xl p-3.5 sm:p-5 border flex items-start gap-3 sm:gap-4 shadow-2xs hover:shadow-xs transition-shadow break-inside-avoid"
                   style={{
                     backgroundColor: `${theme.colors.surface}FA`,
                     borderColor: theme.colors.border,
                   }}
                 >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-sm font-bold border"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 text-xs sm:text-sm font-bold border"
                     style={badgeStyle}
                   >
-                    {idx === 0 ? <Award className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} /> : idx + 1}
+                    {idx === 0 ? <Award className="w-4 h-4 sm:w-4.5 sm:h-4.5" style={{ color: theme.colors.secondary }} /> : idx + 1}
                   </div>
                   <div
-                    className="flex-1 text-base sm:text-lg leading-relaxed font-semibold"
+                    className="flex-1 text-sm sm:text-lg leading-relaxed font-semibold"
                     style={{ color: theme.colors.textPrimary }}
                   >
                     <span>
@@ -842,7 +844,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </span>
                     {item.metricValue && (
                       <div
-                        className="mt-2.5 inline-block font-mono text-sm sm:text-base font-bold px-3 py-1 rounded-md border"
+                        className="mt-2 sm:mt-2.5 inline-block font-mono text-xs sm:text-base font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-md border"
                         style={{
                           color: theme.colors.primary,
                           backgroundColor: theme.colors.background,
@@ -880,34 +882,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       >
         <button
           onClick={() => setShowTable(!showTable)}
-          className="w-full px-6 py-5 flex items-center justify-between text-right cursor-pointer hover:bg-black/2 transition-colors"
+          className="w-full px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between text-right cursor-pointer hover:bg-black/2 transition-colors"
         >
-          <div className="flex items-center gap-3.5">
-            <FileSpreadsheet className="w-5 h-5" style={{ color: theme.colors.primary }} />
-            <span className="text-base sm:text-lg font-bold" style={{ color: theme.colors.textPrimary }}>
+          <div className="flex items-center gap-2.5 sm:gap-3.5">
+            <FileSpreadsheet className="w-4.5 h-4.5 sm:w-5 sm:h-5" style={{ color: theme.colors.primary }} />
+            <span className="text-sm sm:text-lg font-bold" style={{ color: theme.colors.textPrimary }}>
               {isAr ? 'عرض جدول البيانات المنظمة بالكامل' : 'View Full Cleaned Data Table'}
             </span>
             <span
-              className="text-sm sm:text-base font-mono font-bold"
+              className="text-xs sm:text-base font-mono font-bold"
               style={{ color: `${theme.colors.textPrimary}B0` }}
             >
               ({filteredRows.length} {isAr ? 'سجل' : 'rows'})
             </span>
           </div>
           {showTable ? (
-            <ChevronUp className="w-5 h-5" style={{ color: theme.colors.primary }} />
+            <ChevronUp className="w-4.5 h-4.5 sm:w-5 sm:h-5" style={{ color: theme.colors.primary }} />
           ) : (
-            <ChevronDown className="w-5 h-5" style={{ color: theme.colors.primary }} />
+            <ChevronDown className="w-4.5 h-4.5 sm:w-5 sm:h-5" style={{ color: theme.colors.primary }} />
           )}
         </button>
 
         {showTable && (
           <div
-            className="p-6 border-t space-y-5"
+            className="p-3.5 sm:p-6 border-t space-y-4 sm:space-y-5"
             style={{ borderColor: theme.colors.border }}
           >
             {/* Search Input */}
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4">
               <input
                 type="text"
                 placeholder={isAr ? 'بحث في السجلات...' : 'Search records...'}
@@ -916,7 +918,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   setTableSearch(e.target.value);
                   setTablePage(1);
                 }}
-                className="w-full max-w-sm px-4 py-2.5 text-base rounded-xl focus:outline-none focus:ring-2 font-medium border"
+                className="w-full max-w-sm px-3.5 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-xl focus:outline-none focus:ring-2 font-medium border"
                 style={{
                   backgroundColor: theme.colors.background,
                   borderColor: theme.colors.border,
@@ -924,7 +926,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 }}
               />
               <span
-                className="text-sm sm:text-base font-mono font-bold"
+                className="text-xs sm:text-base font-mono font-bold"
                 style={{ color: `${theme.colors.textPrimary}BF` }}
               >
                 {searchResults.length} {isAr ? 'نتيجة مطابقة' : 'matching results'}

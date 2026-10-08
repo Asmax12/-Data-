@@ -48,7 +48,7 @@ export const NaturalLanguageBar: React.FC<NaturalLanguageBarProps> = ({
 
   return (
     <div
-      className="rounded-2xl border p-6 sm:p-7 space-y-4.5 shadow-xs"
+      className="rounded-2xl border p-4 sm:p-7 space-y-3.5 sm:space-y-4.5 shadow-xs"
       style={{
         backgroundColor: theme.colors.surface,
         borderColor: theme.colors.border,
@@ -57,21 +57,21 @@ export const NaturalLanguageBar: React.FC<NaturalLanguageBarProps> = ({
     >
       {/* Title & prompt hint */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
             style={{
               backgroundColor: theme.colors.primary,
               color: '#FFF9F2',
             }}
           >
-            <MessageSquare className="w-5 h-5" style={{ color: theme.colors.secondary }} />
+            <MessageSquare className="w-4.5 h-4.5 sm:w-5 sm:h-5" style={{ color: theme.colors.secondary }} />
           </div>
           <div>
-            <h3 className="text-base sm:text-lg font-bold" style={{ color: theme.colors.primary }}>
+            <h3 className="text-sm sm:text-lg font-bold" style={{ color: theme.colors.primary }}>
               {isAr ? 'اسأل أو اطلب تعديل بلغة عادية' : 'Ask or Request Changes in Plain Language'}
             </h3>
-            <p className="text-sm sm:text-base font-medium mt-0.5" style={{ color: `${theme.colors.textPrimary}B8` }}>
+            <p className="text-xs sm:text-base font-medium mt-0.5" style={{ color: `${theme.colors.textPrimary}B8` }}>
               {isAr
                 ? 'مش محتاج تكتب معادلات؛ اكتب اللي في بالك وDataMate هيظبط الداشبورد'
                 : 'No formulas needed; speak naturally and DataMate adapts the dashboard'}
@@ -81,8 +81,8 @@ export const NaturalLanguageBar: React.FC<NaturalLanguageBarProps> = ({
       </div>
 
       {/* Suggested Quick Chips */}
-      <div className="flex items-center gap-2.5 overflow-x-auto pb-1.5 text-base">
-        <span className="text-sm sm:text-base shrink-0 font-bold" style={{ color: `${theme.colors.textPrimary}99` }}>
+      <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto pb-1 text-xs sm:text-base no-scrollbar">
+        <span className="text-xs sm:text-base shrink-0 font-bold" style={{ color: `${theme.colors.textPrimary}99` }}>
           {isAr ? 'اقتراحات سريعة:' : 'Quick suggestions:'}
         </span>
         {suggestedChips.map((chip, idx) => (
@@ -90,7 +90,7 @@ export const NaturalLanguageBar: React.FC<NaturalLanguageBarProps> = ({
             key={idx}
             onClick={() => handleSend(chip)}
             disabled={isProcessing}
-            className="shrink-0 px-3.5 py-2 text-sm sm:text-base font-bold rounded-xl border transition-colors cursor-pointer disabled:opacity-50"
+            className="shrink-0 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-base font-bold rounded-xl border transition-colors cursor-pointer disabled:opacity-50"
             style={{
               backgroundColor: theme.colors.background,
               borderColor: theme.colors.border,
@@ -108,7 +108,7 @@ export const NaturalLanguageBar: React.FC<NaturalLanguageBarProps> = ({
           e.preventDefault();
           handleSend();
         }}
-        className="flex items-center gap-3"
+        className="flex items-center gap-2 sm:gap-3"
       >
         <div className="relative flex-1">
           <input
@@ -121,7 +121,7 @@ export const NaturalLanguageBar: React.FC<NaturalLanguageBarProps> = ({
                 : 'Type here.. e.g. "What is the top city?" or "Show monthly sales"'
             }
             disabled={isProcessing}
-            className="w-full px-5 py-3.5 text-base sm:text-lg rounded-xl focus:outline-none focus:ring-2 font-medium border"
+            className="w-full px-3.5 sm:px-5 py-2.5 sm:py-3.5 text-sm sm:text-lg rounded-xl focus:outline-none focus:ring-2 font-medium border"
             style={{
               backgroundColor: theme.colors.background,
               borderColor: theme.colors.border,
@@ -132,7 +132,7 @@ export const NaturalLanguageBar: React.FC<NaturalLanguageBarProps> = ({
         <button
           type="submit"
           disabled={isProcessing || !inputText.trim()}
-          className="px-6 py-3.5 rounded-xl transition-all font-bold text-base sm:text-lg flex items-center gap-2.5 cursor-pointer disabled:opacity-50 shrink-0 shadow-xs"
+          className="px-4 sm:px-6 py-2.5 sm:py-3.5 rounded-xl transition-all font-bold text-sm sm:text-lg flex items-center gap-2 sm:gap-2.5 cursor-pointer disabled:opacity-50 shrink-0 shadow-xs"
           style={{
             backgroundColor: theme.colors.primary,
             color: '#FFF9F2',
@@ -143,7 +143,7 @@ export const NaturalLanguageBar: React.FC<NaturalLanguageBarProps> = ({
           ) : (
             <>
               <span>{isAr ? 'إرسال' : 'Send'}</span>
-              <Send className="w-4.5 h-4.5" />
+              <Send className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             </>
           )}
         </button>

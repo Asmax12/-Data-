@@ -225,9 +225,9 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/40 backdrop-blur-xs animate-fade-in no-print">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/40 backdrop-blur-xs animate-fade-in no-print">
       <div
-        className="rounded-2xl border shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+        className="rounded-2xl border shadow-2xl max-w-4xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden"
         style={{
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
@@ -235,27 +235,27 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
       >
         {/* Top Header */}
         <div
-          className="px-6 py-5 border-b flex items-center justify-between"
+          className="px-3.5 sm:px-6 py-3.5 sm:py-5 border-b flex items-center justify-between gap-2"
           style={{
             backgroundColor: theme.colors.surfaceSecondary,
             borderColor: theme.colors.border,
           }}
         >
-          <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs"
               style={{
                 backgroundColor: theme.colors.primary,
                 color: '#FFF9F2',
               }}
             >
-              <Edit2 className="w-5 h-5" style={{ color: theme.colors.secondary }} />
+              <Edit2 className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: theme.colors.secondary }} />
             </div>
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black" style={{ color: theme.colors.primary }}>
-                {isAr ? 'تعديل البيانات ولوحة التحكم' : 'Edit Data & Dashboard'}
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-2xl font-black truncate" style={{ color: theme.colors.primary }}>
+                {isAr ? 'تعديل البيانات والداشبورد' : 'Edit Data & Dashboard'}
               </h2>
-              <p className="text-sm sm:text-base font-medium mt-0.5" style={{ color: `${theme.colors.textPrimary}B8` }}>
+              <p className="hidden sm:block text-sm sm:text-base font-medium mt-0.5" style={{ color: `${theme.colors.textPrimary}B8` }}>
                 {isAr
                   ? 'عدّل السجلات، صحح القيم، أضف أعمدة، أو خصص المخططات والمؤشرات'
                   : 'Edit records, correct values, manage columns, and customize charts'}
@@ -263,31 +263,31 @@ export const EditDashboardModal: React.FC<EditDashboardModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
               onClick={handleCommit}
-              className="px-5 py-2.5 text-base font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+              className="px-3 sm:px-5 py-1.5 sm:py-2.5 text-xs sm:text-base font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 sm:gap-2 cursor-pointer"
               style={{
                 backgroundColor: theme.colors.primary,
                 color: '#FFF9F2',
               }}
             >
-              <Save className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
-              <span>{isAr ? 'حفظ وتحديث الداشبورد' : 'Save & Update'}</span>
+              <Save className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5" style={{ color: theme.colors.secondary }} />
+              <span>{isAr ? 'حفظ وتحديث' : 'Save'}</span>
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-black/5 cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl hover:bg-black/5 cursor-pointer"
               style={{ color: `${theme.colors.textPrimary}99` }}
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
         </div>
 
         {/* Tab Navigation */}
         <div
-          className="flex items-center gap-2 px-6 pt-3.5 border-b text-base overflow-x-auto"
+          className="flex items-center gap-1 sm:gap-2 px-3.5 sm:px-6 pt-2.5 sm:pt-3.5 border-b text-xs sm:text-base overflow-x-auto no-scrollbar whitespace-nowrap"
           style={{
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,

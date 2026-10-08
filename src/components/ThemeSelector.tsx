@@ -33,7 +33,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ language }) => {
     <div className="relative inline-block text-right no-print" ref={containerRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3.5 py-2 text-base font-bold rounded-xl transition-all cursor-pointer border shadow-2xs hover:shadow-xs"
+        className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-base font-bold rounded-xl transition-all cursor-pointer border shadow-2xs hover:shadow-xs"
         style={{
           backgroundColor: 'white',
           borderColor: theme.colors.border,
@@ -43,14 +43,14 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ language }) => {
         aria-label="Theme selector"
         aria-expanded={isOpen}
       >
-        <Palette className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
-        <span>{isAr ? 'المظهر' : 'Theme'}</span>
+        <Palette className="w-3.5 h-3.5 sm:w-4.5 sm:h-4.5" style={{ color: theme.colors.secondary }} />
+        <span className="hidden xs:inline sm:inline">{isAr ? 'المظهر' : 'Theme'}</span>
         {/* Color preview dots of current theme */}
         <div className="flex items-center -space-x-1 rtl:space-x-reverse ml-0.5">
           {theme.previewColors.slice(0, 3).map((c, i) => (
             <span
               key={i}
-              className="w-2.5 h-2.5 rounded-full ring-1 ring-white"
+              className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full ring-1 ring-white"
               style={{ backgroundColor: c }}
             />
           ))}
@@ -62,7 +62,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ language }) => {
         <div
           className={`absolute ${
             isAr ? 'left-0 sm:left-auto sm:right-0' : 'right-0'
-          } mt-2 w-72 sm:w-80 rounded-2xl shadow-xl border p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150`}
+          } mt-2 w-[calc(100vw-24px)] max-w-xs sm:max-w-none sm:w-80 rounded-2xl shadow-xl border p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150`}
           style={{
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,

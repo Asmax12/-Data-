@@ -35,15 +35,15 @@ export const AILimitBanner: React.FC<AILimitBannerProps> = ({
     <aside
       role="status"
       aria-live="polite"
-      className="rounded-2xl p-4 sm:p-5 shadow-2xs mx-4 lg:mx-8 mb-4 animate-fade-in no-print border"
+      className="rounded-2xl p-3.5 sm:p-5 shadow-2xs mx-3 sm:mx-4 lg:mx-8 mb-4 animate-fade-in no-print border"
       style={{
         backgroundColor: theme.colors.surface,
         borderColor: theme.colors.borderAccent || theme.colors.border,
       }}
     >
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         {/* Left message & status */}
-        <div className="flex items-start gap-3.5">
+        <div className="flex items-start gap-2.5 sm:gap-3.5">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs"
             style={{

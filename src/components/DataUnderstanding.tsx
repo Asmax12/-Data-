@@ -80,30 +80,30 @@ export const DataUnderstanding: React.FC<DataUnderstandingProps> = ({
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 lg:py-12 space-y-8 animate-fade-in">
+    <div className="max-w-5xl mx-auto px-3 sm:px-4 py-5 sm:py-8 lg:py-12 space-y-6 sm:space-y-8 animate-fade-in">
       {/* Top Banner */}
       <div
-        className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b pb-6"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5 border-b pb-5 sm:pb-6"
         style={{ borderColor: theme.colors.border }}
       >
         <div>
-          <div className="flex items-center gap-2.5 mb-2.5">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.colors.primary }} />
+          <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-2.5">
+            <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full" style={{ backgroundColor: theme.colors.primary }} />
             <span
-              className="text-sm sm:text-base font-bold uppercase tracking-wider"
+              className="text-xs sm:text-base font-bold uppercase tracking-wider"
               style={{ color: theme.colors.primary }}
             >
               {isAr ? 'الخطوة 2: فهم وتنظيم البيانات' : 'Step 2: Understanding Your Data'}
             </span>
           </div>
           <h2
-            className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight"
+            className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight"
             style={{ color: theme.colors.textPrimary }}
           >
             {isAr ? 'فهمنا بياناتك ونظمناها بنجاح!' : 'We understood and organized your data!'}
           </h2>
           <p
-            className="text-base sm:text-lg mt-1.5 font-medium"
+            className="text-sm sm:text-lg mt-1 sm:mt-1.5 font-medium"
             style={{ color: `${theme.colors.textPrimary}CC` }}
           >
             {isAr
@@ -112,10 +112,10 @@ export const DataUnderstanding: React.FC<DataUnderstandingProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3.5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3.5 w-full md:w-auto">
           <button
             onClick={onBack}
-            className="px-5 py-2.5 text-base font-bold rounded-xl border transition-colors cursor-pointer"
+            className="w-full sm:w-auto px-4 sm:px-5 py-2 sm:py-2.5 text-sm sm:text-base font-bold rounded-xl border transition-colors cursor-pointer"
             style={{
               backgroundColor: theme.colors.surface,
               borderColor: theme.colors.border,
@@ -126,92 +126,92 @@ export const DataUnderstanding: React.FC<DataUnderstandingProps> = ({
           </button>
           <button
             onClick={onProceedToDashboard}
-            className="px-7 py-2.5 text-base sm:text-lg font-bold rounded-xl transition-all shadow-xs flex items-center gap-2.5 cursor-pointer"
+            className="w-full sm:w-auto justify-center px-5 sm:px-7 py-2 sm:py-2.5 text-sm sm:text-lg font-bold rounded-xl transition-all shadow-xs flex items-center gap-2 sm:gap-2.5 cursor-pointer"
             style={{
               backgroundColor: theme.colors.primary,
               color: '#FFF9F2',
             }}
           >
             <span>{isAr ? 'عرض الداشبورد الآن' : 'View Dashboard Now'}</span>
-            {isAr ? <ArrowLeft className="w-4.5 h-4.5" /> : <ArrowRight className="w-4.5 h-4.5" />}
+            {isAr ? <ArrowLeft className="w-4 h-4 sm:w-4.5 sm:h-4.5" /> : <ArrowRight className="w-4 h-4 sm:w-4.5 sm:h-4.5" />}
           </button>
         </div>
       </div>
 
       {/* Summary Stats Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
         <div
-          className="p-6 rounded-2xl border shadow-2xs"
+          className="p-4 sm:p-6 rounded-2xl border shadow-2xs"
           style={{
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,
           }}
         >
           <span
-            className="text-sm sm:text-base block mb-1.5 font-bold"
+            className="text-xs sm:text-base block mb-1 sm:mb-1.5 font-bold"
             style={{ color: `${theme.colors.textPrimary}B0` }}
           >
-            {isAr ? 'عدد السجلات (الصفوف)' : 'Total Records (Rows)'}
+            {isAr ? 'عدد السجلات' : 'Total Records'}
           </span>
-          <span className="text-4xl sm:text-5xl font-black font-mono" style={{ color: theme.colors.primary }}>
+          <span className="text-3xl sm:text-5xl font-black font-mono" style={{ color: theme.colors.primary }}>
             {dataset.totalRows}
           </span>
         </div>
 
         <div
-          className="p-6 rounded-2xl border shadow-2xs"
+          className="p-4 sm:p-6 rounded-2xl border shadow-2xs"
           style={{
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,
           }}
         >
           <span
-            className="text-sm sm:text-base block mb-1.5 font-bold"
+            className="text-xs sm:text-base block mb-1 sm:mb-1.5 font-bold"
             style={{ color: `${theme.colors.textPrimary}B0` }}
           >
             {isAr ? 'الأعمدة المكتشفة' : 'Identified Columns'}
           </span>
-          <span className="text-4xl sm:text-5xl font-black font-mono" style={{ color: theme.colors.primary }}>
+          <span className="text-3xl sm:text-5xl font-black font-mono" style={{ color: theme.colors.primary }}>
             {dataset.totalColumns}
           </span>
         </div>
 
         <div
-          className="p-6 rounded-2xl border shadow-2xs"
+          className="p-4 sm:p-6 rounded-2xl border shadow-2xs"
           style={{
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,
           }}
         >
           <span
-            className="text-sm sm:text-base block mb-1.5 font-bold"
+            className="text-xs sm:text-base block mb-1 sm:mb-1.5 font-bold"
             style={{ color: `${theme.colors.textPrimary}B0` }}
           >
-            {isAr ? 'القيم التي تم تنظيمها' : 'Cleaned Values'}
+            {isAr ? 'القيم المنظمة' : 'Cleaned Values'}
           </span>
-          <span className="text-4xl sm:text-5xl font-black font-mono" style={{ color: theme.colors.secondary }}>
+          <span className="text-3xl sm:text-5xl font-black font-mono" style={{ color: theme.colors.secondary }}>
             {dataset.cleaningSummary.missingValuesFixed}
           </span>
         </div>
 
         <div
-          className="p-6 rounded-2xl border shadow-2xs"
+          className="p-4 sm:p-6 rounded-2xl border shadow-2xs"
           style={{
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,
           }}
         >
           <span
-            className="text-sm sm:text-base block mb-1.5 font-bold"
+            className="text-xs sm:text-base block mb-1 sm:mb-1.5 font-bold"
             style={{ color: `${theme.colors.textPrimary}B0` }}
           >
             {isAr ? 'حالة جودة البيانات' : 'Data Integrity'}
           </span>
           <span
-            className="text-lg sm:text-xl font-black flex items-center gap-2 mt-1"
+            className="text-base sm:text-xl font-black flex items-center gap-1.5 sm:gap-2 mt-1"
             style={{ color: theme.colors.primary }}
           >
-            <CheckCircle className="w-5.5 h-5.5 text-emerald-600" />
+            <CheckCircle className="w-4.5 h-4.5 sm:w-5.5 sm:h-5.5 text-emerald-600" />
             {isAr ? 'جاهزة 100%' : '100% Ready'}
           </span>
         </div>
@@ -371,7 +371,7 @@ export const DataUnderstanding: React.FC<DataUnderstandingProps> = ({
       <div className="text-center pt-4">
         <button
           onClick={onProceedToDashboard}
-          className="px-10 py-4 text-lg font-black rounded-xl transition-all shadow-md inline-flex items-center gap-3 cursor-pointer"
+          className="w-full sm:w-auto justify-center px-6 sm:px-10 py-3.5 sm:py-4 text-base sm:text-lg font-black rounded-xl transition-all shadow-md inline-flex items-center gap-2.5 sm:gap-3 cursor-pointer"
           style={{
             backgroundColor: theme.colors.primary,
             color: '#FFF9F2',

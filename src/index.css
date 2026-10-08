@@ -241,3 +241,12 @@ body[dir="ltr"] {
   }
 }
 
+/* Mobile-only responsive containment: prevent horizontal scrolling and clipping */
+@media (max-width: 639px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+}
+
+

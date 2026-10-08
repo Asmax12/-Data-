@@ -90,9 +90,9 @@ export const UpdateDataModal: React.FC<UpdateDataModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/40 backdrop-blur-xs animate-fade-in">
       <div
-        className="rounded-2xl border shadow-xl max-w-lg w-full p-6 space-y-5 relative"
+        className="rounded-2xl border shadow-xl max-w-lg w-full p-4 sm:p-6 space-y-4 sm:space-y-5 relative max-h-[92vh] overflow-y-auto"
         style={{
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,

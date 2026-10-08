@@ -63,32 +63,32 @@ export const BarChart: React.FC<BarChartProps> = ({
               onClick={() => onBarClick?.(item.label)}
               title={`اضغط للتصفية حسب ${item.label}`}
             >
-              <div className="flex items-center justify-between text-base mb-2.5 font-medium" style={{ color: theme.colors.textPrimary }}>
-                <div className="flex items-center gap-3 truncate">
+              <div className="flex items-center justify-between text-sm sm:text-base mb-2.5 font-medium" style={{ color: theme.colors.textPrimary }}>
+                <div className="flex items-center gap-2 sm:gap-3 truncate">
                   <span
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-xs sm:text-sm font-mono font-bold shrink-0 transition-colors"
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-md flex items-center justify-center text-xs sm:text-sm font-mono font-bold shrink-0 transition-colors"
                     style={{
                       backgroundColor: isSelected ? theme.colors.primary : `${barColor}25`,
                       color: isSelected ? '#FFF9F2' : theme.colors.primary,
                     }}
                   >
-                    {isSelected ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                    {isSelected ? <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> : idx + 1}
                   </span>
-                  <span className="truncate max-w-[230px] font-bold text-base" style={{ color: theme.colors.textPrimary }}>
+                  <span className="truncate max-w-[110px] min-[380px]:max-w-[160px] sm:max-w-[230px] font-bold text-sm sm:text-base" style={{ color: theme.colors.textPrimary }}>
                     {item.label}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2.5 font-mono">
+                <div className="flex items-center gap-1.5 sm:gap-2.5 font-mono shrink-0">
                   <span
-                    className="font-black text-base sm:text-lg"
+                    className="font-black text-sm sm:text-lg"
                     style={{ color: theme.colors.primary }}
                   >
                     {formatMetricNumber(item.value, true)}
                   </span>
                   {item.percentage !== undefined && (
                     <span
-                      className="text-xs sm:text-sm px-2.5 py-0.5 rounded-md font-bold border"
+                      className="text-xs sm:text-sm px-1.5 sm:px-2.5 py-0.5 rounded-md font-bold border"
                       style={{
                         backgroundColor: theme.colors.bg,
                         borderColor: theme.colors.border,

@@ -138,11 +138,11 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
   };
 
   return (
-    <div className="relative inline-block text-right no-print" ref={dropdownRef}>
+    <div className="relative inline-block text-right no-print w-full sm:w-auto" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isExporting}
-        className="flex items-center gap-2 px-4.5 py-2.5 text-base font-bold rounded-xl border shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+        className="flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-4.5 py-2 sm:py-2.5 text-sm sm:text-base font-bold rounded-xl border shadow-2xs transition-all cursor-pointer disabled:opacity-50 w-full sm:w-auto"
         style={{
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
@@ -179,7 +179,9 @@ export const ExportDropdown: React.FC<ExportDropdownProps> = ({
       {/* Dropdown Menu */}
       {isOpen && (
         <div
-          className="export-menu absolute top-full mt-2 right-0 z-50 w-56 rounded-2xl border shadow-xl py-2 text-sm sm:text-base animate-fade-in"
+          className={`export-menu absolute top-full mt-2 ${
+            isAr ? 'left-0 sm:left-auto sm:right-0' : 'right-0'
+          } z-50 w-52 sm:w-56 rounded-2xl border shadow-xl py-2 text-sm sm:text-base animate-fade-in`}
           style={{
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.border,

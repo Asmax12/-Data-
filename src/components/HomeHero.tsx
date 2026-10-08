@@ -8,9 +8,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   Table,
-  Zap,
 } from 'lucide-react';
-import { SAMPLE_DATASETS } from '../constants/sampleData';
 import { parseSpreadsheetBuffer, parseRawTextTable, processAndCleanData } from '../utils/dataParser';
 import { parseUnstructuredTextWithAI } from '../services/aiService';
 import { CleanedDataset } from '../types';
@@ -135,37 +133,18 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
     }
   };
 
-  // Load sample dataset
-  const handleLoadSample = (sampleId: string) => {
-    const sample = SAMPLE_DATASETS.find((s) => s.id === sampleId);
-    if (!sample) return;
-
-    try {
-      setIsProcessing(true);
-      const parsed = parseRawTextTable(sample.rawCsv);
-      const dataset = processAndCleanData(
-        parsed.headers,
-        parsed.rows,
-        isAr ? sample.titleAr : sample.titleEn
-      );
-      onDatasetReady(dataset);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 lg:py-14 space-y-10">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-5 sm:py-8 lg:py-14 space-y-6 sm:space-y-10">
       {/* Return to Active Dashboard Banner if one exists */}
       {hasActiveDataset && onReturnToDashboard && (
         <div
-          className="rounded-2xl p-4.5 flex flex-col sm:flex-row items-center justify-between gap-3.5 shadow-xs animate-fade-in border"
+          className="rounded-2xl p-4 sm:p-4.5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-3.5 shadow-xs animate-fade-in border"
           style={{
             backgroundColor: theme.colors.surface,
             borderColor: theme.colors.secondary,
           }}
         >
-          <div className="flex items-center gap-3.5 text-right">
+          <div className="flex items-center gap-3 sm:gap-3.5 text-right">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
               style={{
@@ -188,7 +167,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
           </div>
           <button
             onClick={onReturnToDashboard}
-            className="px-5 py-2.5 text-sm sm:text-base font-bold rounded-xl transition-all flex items-center gap-2 shadow-2xs cursor-pointer shrink-0"
+            className="w-full sm:w-auto justify-center px-4 sm:px-5 py-2.5 text-sm sm:text-base font-bold rounded-xl transition-all flex items-center gap-2 shadow-2xs cursor-pointer shrink-0"
             style={{
               backgroundColor: theme.colors.primary,
               color: '#FFF9F2',
@@ -201,15 +180,15 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
       )}
 
       {/* Hero Headline and description */}
-      <div className="text-center space-y-4.5 max-w-2xl mx-auto">
+      <div className="text-center space-y-3 sm:space-y-4.5 max-w-2xl mx-auto px-1">
         <h1
-          className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight"
+          className="text-2xl min-[380px]:text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-snug sm:leading-tight"
           style={{ color: theme.colors.primary }}
         >
           {isAr ? 'عندك بيانات؟ سيب الباقي علينا.' : 'Got Data? Leave the rest to us.'}
         </h1>
         <p
-          className="text-lg sm:text-2xl leading-relaxed font-normal"
+          className="text-sm min-[380px]:text-base sm:text-xl lg:text-2xl leading-relaxed font-normal"
           style={{ color: `${theme.colors.textPrimary}D9` }}
         >
           {isAr
@@ -218,33 +197,33 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
         </p>
 
         {/* Mode Switcher */}
-        <div className="flex items-center justify-center gap-3.5 pt-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3.5 pt-2">
           <button
             onClick={() => setInputMode('upload')}
-            className="px-6 py-3 text-base sm:text-lg font-bold rounded-xl transition-all cursor-pointer shadow-xs border"
+            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-lg font-bold rounded-xl transition-all cursor-pointer shadow-xs border"
             style={{
               backgroundColor: inputMode === 'upload' ? theme.colors.primary : theme.colors.surface,
               color: inputMode === 'upload' ? '#FFF9F2' : theme.colors.textPrimary,
               borderColor: inputMode === 'upload' ? theme.colors.primary : theme.colors.border,
             }}
           >
-            <span className="flex items-center gap-2.5">
-              <Upload className="w-5 h-5" />
+            <span className="flex items-center justify-center gap-2 sm:gap-2.5">
+              <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
               {isAr ? 'ابدأ التحليل' : 'Start Analysis (Upload)'}
             </span>
           </button>
 
           <button
             onClick={() => setInputMode('manual')}
-            className="px-6 py-3 text-base sm:text-lg font-bold rounded-xl transition-all cursor-pointer shadow-xs border"
+            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-lg font-bold rounded-xl transition-all cursor-pointer shadow-xs border"
             style={{
               backgroundColor: inputMode === 'manual' ? theme.colors.primary : theme.colors.surface,
               color: inputMode === 'manual' ? '#FFF9F2' : theme.colors.textPrimary,
               borderColor: inputMode === 'manual' ? theme.colors.primary : theme.colors.border,
             }}
           >
-            <span className="flex items-center gap-2.5">
-              <Table className="w-5 h-5" />
+            <span className="flex items-center justify-center gap-2 sm:gap-2.5">
+              <Table className="w-4 h-4 sm:w-5 sm:h-5" />
               {isAr ? 'أدخل البيانات يدويًا' : 'Enter Data Manually'}
             </span>
           </button>
@@ -254,7 +233,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
       {/* Error alert */}
       {errorMessage && (
         <div
-          className="px-4.5 py-3 rounded-xl text-base flex items-center justify-between border"
+          className="px-3.5 sm:px-4.5 py-3 rounded-xl text-sm sm:text-base flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border"
           style={{
             backgroundColor: `${theme.colors.danger}15`,
             borderColor: theme.colors.danger,
@@ -264,7 +243,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
           <span className="font-medium">{errorMessage}</span>
           <button
             onClick={() => setErrorMessage(null)}
-            className="text-sm font-bold underline cursor-pointer"
+            className="text-sm font-bold underline cursor-pointer shrink-0"
             style={{ color: theme.colors.primary }}
           >
             {isAr ? 'إغلاق' : 'Dismiss'}
@@ -274,7 +253,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
 
       {/* Main Box: File Upload or Manual Input */}
       <div
-        className="rounded-2xl border shadow-xs p-6 sm:p-9 relative overflow-hidden transition-all"
+        className="rounded-2xl border shadow-xs p-3.5 sm:p-9 relative overflow-hidden transition-all"
         style={{
           backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
@@ -282,7 +261,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
       >
         {inputMode === 'upload' ? (
           <div
-            className="border-2 border-dashed rounded-xl p-8 sm:p-12 text-center transition-all cursor-pointer"
+            className="border-2 border-dashed rounded-xl p-4 sm:p-12 text-center transition-all cursor-pointer"
             style={{
               borderColor: dragActive ? theme.colors.primary : theme.colors.borderAccent,
               backgroundColor: dragActive ? `${theme.colors.primary}0D` : `${theme.colors.background}80`,
@@ -305,9 +284,9 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
               }}
             />
 
-            <div className="flex flex-col items-center gap-4.5">
+            <div className="flex flex-col items-center gap-3 sm:gap-4.5">
               <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center"
                 style={{
                   backgroundColor: `${theme.colors.primary}18`,
                   color: theme.colors.primary,
@@ -315,21 +294,21 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
               >
                 {isProcessing ? (
                   <div
-                    className="w-7 h-7 border-3 border-t-transparent rounded-full animate-spin"
+                    className="w-6 h-6 sm:w-7 sm:h-7 border-3 border-t-transparent rounded-full animate-spin"
                     style={{ borderColor: theme.colors.primary, borderTopColor: 'transparent' }}
                   />
                 ) : (
-                  <Upload className="w-8 h-8" />
+                  <Upload className="w-6 h-6 sm:w-8 sm:h-8" />
                 )}
               </div>
 
               <div>
-                <p className="text-lg sm:text-xl font-bold mb-1.5" style={{ color: theme.colors.textPrimary }}>
+                <p className="text-base sm:text-xl font-bold mb-1 sm:mb-1.5" style={{ color: theme.colors.textPrimary }}>
                   {isAr
                     ? 'اسحب ملف Excel أو CSV هنا، أو اضغط للاختيار'
                     : 'Drop your Excel or CSV file here, or click to browse'}
                 </p>
-                <p className="text-sm sm:text-base font-medium" style={{ color: `${theme.colors.textPrimary}B0` }}>
+                <p className="text-xs sm:text-base font-medium" style={{ color: `${theme.colors.textPrimary}B0` }}>
                   {isAr
                     ? 'يدعم صيغ .xlsx و .xls و .csv و .txt — بنظبط الأعمدة والأرقام تلقائيًا'
                     : 'Supports .xlsx, .xls, .csv, .txt — columns & numbers auto-cleaned'}
@@ -337,19 +316,19 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
               </div>
 
               <div
-                className="flex flex-wrap items-center justify-center gap-5 text-sm pt-2 font-bold"
+                className="flex flex-wrap items-center justify-center gap-2 sm:gap-5 text-xs sm:text-sm pt-2 font-bold"
                 style={{ color: theme.colors.primary }}
               >
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" style={{ color: theme.colors.secondary }} />
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.colors.secondary }} />
                   {isAr ? 'كشف الأعمدة الذكي' : 'Smart Column Detection'}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" style={{ color: theme.colors.secondary }} />
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.colors.secondary }} />
                   {isAr ? 'تنظيف القيم المفقودة' : 'Auto Cleaning'}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" style={{ color: theme.colors.secondary }} />
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" style={{ color: theme.colors.secondary }} />
                   {isAr ? 'داشبورد فورية' : 'Instant Dashboard'}
                 </span>
               </div>
@@ -357,21 +336,21 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
           </div>
         ) : (
           /* Manual Input Mode */
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             <div>
-              <label className="block text-base font-bold mb-2" style={{ color: theme.colors.textPrimary }}>
+              <label className="block text-sm sm:text-base font-bold mb-2" style={{ color: theme.colors.textPrimary }}>
                 {isAr ? 'الصق جدولك أو اكتب بياناتك كنص عادي:' : 'Paste table or raw text:'}
               </label>
               <textarea
                 value={manualText}
                 onChange={(e) => setManualText(e.target.value)}
-                rows={6}
+                rows={5}
                 placeholder={
                   isAr
                     ? 'العميل, المدينة, المنتج, السعر, الكمية, التاريخ\nأحمد, القاهرة, لابتوب, 30000, 2, 2024-01-15\nسارة, الإسكندرية, سماعة, 2500, 3, 2024-01-18...'
                     : 'Customer, City, Product, Price, Quantity, Date\nAhmed, Cairo, Laptop, 30000, 2, 2024-01-15\nSara, Alexandria, Headset, 2500, 3, 2024-01-18...'
                 }
-                className="w-full p-4 text-sm sm:text-base font-mono rounded-xl focus:outline-none focus:ring-2 font-medium border"
+                className="w-full p-3 sm:p-4 text-xs sm:text-base font-mono rounded-xl focus:outline-none focus:ring-2 font-medium border"
                 style={{
                   backgroundColor: theme.colors.background,
                   borderColor: theme.colors.border,
@@ -382,15 +361,15 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
 
             {/* Optional Natural Prompt */}
             <div>
-              <label className="block text-base font-bold mb-1.5" style={{ color: theme.colors.primary }}>
+              <label className="block text-sm sm:text-base font-bold mb-1.5" style={{ color: theme.colors.primary }}>
                 {isAr ? 'عايز تعمل إيه بالبيانات؟ (بلغتك العادية):' : 'What do you want to achieve? (natural language):'}
               </label>
-              <div className="flex gap-2.5">
+              <div className="flex flex-col sm:flex-row gap-2.5">
                 <input
                   type="text"
                   value={userPrompt}
                   onChange={(e) => setUserPrompt(e.target.value)}
-                  className="flex-1 px-4 py-2.5 text-base rounded-xl focus:outline-none focus:ring-2 font-medium border"
+                  className="w-full flex-1 px-3.5 sm:px-4 py-2.5 text-sm sm:text-base rounded-xl focus:outline-none focus:ring-2 font-medium border"
                   style={{
                     backgroundColor: theme.colors.surface,
                     borderColor: theme.colors.border,
@@ -400,7 +379,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
                 <button
                   onClick={handleManualSubmit}
                   disabled={isProcessing}
-                  className="px-6 py-2.5 text-base font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full sm:w-auto justify-center px-6 py-2.5 text-sm sm:text-base font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 shrink-0"
                   style={{
                     backgroundColor: theme.colors.primary,
                     color: '#FFF9F2',
@@ -419,66 +398,6 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
             </div>
           </div>
         )}
-      </div>
-
-      {/* 1-Click Ready Sample Datasets */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base sm:text-lg font-bold flex items-center gap-2" style={{ color: theme.colors.primary }}>
-            <Zap className="w-5 h-5" style={{ color: theme.colors.secondary }} />
-            {isAr ? 'أو جرب بنقرة واحدة على بيانات جاهزة:' : 'Or try with 1-click sample data:'}
-          </h2>
-          <span className="text-sm font-semibold" style={{ color: `${theme.colors.textPrimary}B0` }}>
-            {isAr ? 'جاهزة للاختبار الفوري' : 'Ready for instant demo'}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {SAMPLE_DATASETS.map((sample) => (
-            <button
-              key={sample.id}
-              onClick={() => handleLoadSample(sample.id)}
-              disabled={isProcessing}
-              className="text-right p-5 rounded-xl border hover:shadow-sm transition-all text-start cursor-pointer group disabled:opacity-50"
-              style={{
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-              }}
-            >
-              <div className="flex items-center justify-between mb-2.5">
-                <span
-                  className="text-base font-bold transition-colors"
-                  style={{ color: theme.colors.primary }}
-                >
-                  {isAr ? sample.titleAr : sample.titleEn}
-                </span>
-                <span
-                  className="text-xs px-2.5 py-0.5 rounded-md font-bold border"
-                  style={{
-                    backgroundColor: theme.colors.background,
-                    color: theme.colors.primary,
-                    borderColor: theme.colors.border,
-                  }}
-                >
-                  {sample.category}
-                </span>
-              </div>
-              <p
-                className="text-sm line-clamp-2 leading-relaxed font-medium"
-                style={{ color: `${theme.colors.textPrimary}BF` }}
-              >
-                {isAr ? sample.descriptionAr : sample.descriptionEn}
-              </p>
-              <div
-                className="mt-3.5 flex items-center gap-1.5 text-sm font-bold"
-                style={{ color: theme.colors.primary }}
-              >
-                <span>{isAr ? 'تحميل وعرض الداشبورد' : 'Load and preview'}</span>
-                {isAr ? <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" /> : <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />}
-              </div>
-            </button>
-          ))}
-        </div>
       </div>
     </div>
   );

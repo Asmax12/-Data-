@@ -114,13 +114,13 @@ export const DonutChart: React.FC<DonutChartProps> = ({
         </div>
 
         {/* Legend */}
-        <div className="flex-1 space-y-3 w-full">
+        <div className="flex-1 space-y-2.5 sm:space-y-3 w-full">
           {slices.slice(0, 5).map((slice, idx) => {
             const isHovered = hoveredIdx === idx;
             return (
               <div
                 key={idx}
-                className={`flex items-center justify-between text-base p-3 rounded-xl cursor-pointer transition-all ${
+                className={`flex items-center justify-between text-sm sm:text-base p-2.5 sm:p-3 rounded-xl cursor-pointer transition-all ${
                   isHovered
                     ? 'bg-white shadow-xs translate-x-1'
                     : 'hover:bg-white/70'
@@ -133,16 +133,16 @@ export const DonutChart: React.FC<DonutChartProps> = ({
                 onMouseLeave={() => setHoveredIdx(null)}
                 onClick={() => onSliceClick?.(slice.label)}
               >
-                <div className="flex items-center gap-3 truncate">
+                <div className="flex items-center gap-2 sm:gap-3 truncate">
                   <span
-                    className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
+                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full shrink-0 shadow-2xs"
                     style={{ backgroundColor: slice.color }}
                   />
-                  <span className="truncate max-w-[160px] font-bold text-base" style={{ color: theme.colors.textPrimary }}>
+                  <span className="truncate max-w-[100px] min-[380px]:max-w-[130px] sm:max-w-[160px] font-bold text-sm sm:text-base" style={{ color: theme.colors.textPrimary }}>
                     {slice.label}
                   </span>
                 </div>
-                <div className="flex items-center gap-2.5 font-mono text-base">
+                <div className="flex items-center gap-1.5 sm:gap-2.5 font-mono text-sm sm:text-base shrink-0">
                   <span
                     className="font-black"
                     style={{ color: theme.colors.primary }}
@@ -150,7 +150,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
                     {formatMetricNumber(slice.value, true)}
                   </span>
                   <span
-                    className="text-xs sm:text-sm px-2.5 py-0.5 rounded-md border font-bold"
+                    className="text-xs sm:text-sm px-1.5 sm:px-2.5 py-0.5 rounded-md border font-bold"
                     style={{
                       backgroundColor: theme.colors.bg,
                       borderColor: theme.colors.border,

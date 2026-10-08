@@ -183,21 +183,21 @@ export const LineChart: React.FC<LineChartProps> = ({ data, title }) => {
       </div>
 
       {/* Axis dates (large, clear, legible) */}
-      <div className="flex justify-between items-center text-sm sm:text-base px-4 pt-2.5 font-mono font-bold" style={{ color: `${theme.colors.textPrimary}D0` }}>
+      <div className="flex justify-between items-center text-xs sm:text-base px-2 sm:px-4 pt-2.5 font-mono font-bold" style={{ color: `${theme.colors.textPrimary}D0` }}>
         <span>{data[0]?.label}</span>
         {data.length > 2 && <span className="opacity-75">{data[Math.floor(data.length / 2)]?.label}</span>}
         <span>{data[data.length - 1]?.label}</span>
       </div>
 
       <div
-        className="mt-5 pt-3.5 text-sm sm:text-base flex items-center justify-between border-t font-semibold"
+        className="mt-4 sm:mt-5 pt-3 sm:pt-3.5 text-xs sm:text-base flex items-center justify-between border-t font-semibold"
         style={{ borderColor: theme.colors.border, color: `${theme.colors.textPrimary}B8` }}
       >
         <span
-          className="flex items-center gap-2 font-bold"
+          className="flex items-center gap-1.5 sm:gap-2 font-bold"
           style={{ color: theme.colors.primary }}
         >
-          <TrendingUp className="w-4.5 h-4.5" style={{ color: theme.colors.secondary }} />
+          <TrendingUp className="w-4 h-4 sm:w-4.5 sm:h-4.5" style={{ color: theme.colors.secondary }} />
           <span>
             {growth >= 0 ? `نمو بمعدل تقريبي +${growth}%` : `تغير بمعدل ${growth}%`}
           </span>
