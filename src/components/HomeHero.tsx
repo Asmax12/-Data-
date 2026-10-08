@@ -8,11 +8,15 @@ import {
   ArrowLeft,
   CheckCircle2,
   Table,
+  PenTool,
+  Wand2,
 } from 'lucide-react';
-import { parseSpreadsheetBuffer, parseRawTextTable, processAndCleanData } from '../utils/dataParser';
+import { parseSpreadsheetBuffer, processAndCleanData } from '../utils/dataParser';
+import { intelligentParseRawText, SmartParseResult } from '../utils/naturalDataParser';
 import { parseUnstructuredTextWithAI } from '../services/aiService';
 import { CleanedDataset } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { DataConfirmationModal } from './DataConfirmationModal';
 
 interface HomeHeroProps {
   language: 'ar' | 'en';
@@ -31,14 +35,22 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
   const isAr = language === 'ar';
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [inputMode, setInputMode] = useState<'upload' | 'manual'>('upload');
+  // Default mode is 'manual' ("اكتب بياناتك بطريقتك، وإحنا هنرتبها")
+  const [inputMode, setInputMode] = useState<'manual' | 'upload'>('manual');
   const [manualText, setManualText] = useState('');
-  const [userPrompt, setUserPrompt] = useState(
-    'عندي بيانات مبيعات فيها العميل، والمدينة، والمنتج، والسعر، والكمية، والتاريخ. نظمها واعملي داشبورد.'
-  );
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  // State for Review & Confirmation Modal when ambiguous
+  const [confirmationData, setConfirmationData] = useState<{
+    isOpen: boolean;
+    headers: string[];
+    rows: Record<string, any>[];
+    columnTypes: Record<string, any>;
+    confidenceReason?: string;
+    cleaningNotes?: string[];
+  } | null>(null);
 
   // Handle file selection
   const handleFile = async (file: File) => {
@@ -88,10 +100,12 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
     }
   };
 
-  // Handle manual text / table submission
-  const handleManualSubmit = async () => {
+  // Handle natural text submission
+  const handleNaturalTextSubmit = async () => {
     if (!manualText.trim()) {
-      setErrorMessage(isAr ? 'يرجى كتابة أو لصق البيانات أولاً' : 'Please paste or type data first');
+      setErrorMessage(
+        isAr ? 'يرجى كتابة أو لصق البيانات بأي شكل يناسبك أولاً' : 'Please type or paste your data first'
+      );
       return;
     }
 
@@ -99,38 +113,84 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
       setIsProcessing(true);
       setErrorMessage(null);
 
-      // 1. Try deterministic local parsing first (preserves API limits and works offline)
-      let parsed = parseRawTextTable(manualText);
+      // 1. Run generic intelligent local parser first
+      let localResult: SmartParseResult = intelligentParseRawText(manualText);
 
-      // 2. Only if local parsing found zero rows or unstructured text, try AI
-      if (!parsed.rows || parsed.rows.length === 0 || (parsed.headers.length === 1 && !manualText.includes(','))) {
+      // 2. If confidence is low or single-column/unstructured, attempt smart AI extraction
+      if (!localResult.isConfident || localResult.rows.length === 0 || localResult.headers.length <= 1) {
         const aiParsed = await parseUnstructuredTextWithAI(manualText, language);
-        if (aiParsed && aiParsed.rows.length > 0) {
-          parsed = aiParsed;
+        if (aiParsed && aiParsed.rows && aiParsed.rows.length > 0) {
+          localResult = {
+            headers: aiParsed.headers,
+            rows: aiParsed.rows,
+            columnTypes: aiParsed.columnTypes || localResult.columnTypes,
+            isConfident: aiParsed.isConfident !== undefined ? aiParsed.isConfident : true,
+            confidenceScore: aiParsed.confidenceScore || 0.85,
+            confidenceReason: aiParsed.confidenceReason || (isAr ? 'تم استخراج البيانات بذكاء من النص.' : 'Data extracted smartly from text.'),
+            cleaningNotes: aiParsed.notes || localResult.cleaningNotes,
+          };
         }
       }
 
-      if (!parsed.rows || parsed.rows.length === 0) {
+      if (!localResult.rows || localResult.rows.length === 0) {
         throw new Error(
           isAr
-            ? 'لم نتمكن من استخراج بيانات واضحة من النص. يرجى تجربة لصق جدول أو ملف.'
-            : 'Could not extract clean data from text. Try pasting a table or file.'
+            ? 'لم نتمكن من استخراج بيانات واضحة من النص. جرّب كتابة أو لصق أسطر تحتوي على تفاصيل أو قيم.'
+            : 'Could not extract clear data from text. Please try pasting records or values.'
         );
       }
 
-      const dataset = processAndCleanData(
-        parsed.headers,
-        parsed.rows,
-        isAr ? 'بيانات مدخلة يدويًا' : 'Manual Input Data'
-      );
-
-      onDatasetReady(dataset);
+      // 3. AI / System confidence decision:
+      // If confident -> auto-organize into dataset and proceed
+      // If uncertain or ambiguous -> show confirmation screen for user review/edit
+      if (localResult.isConfident && localResult.confidenceScore >= 0.75) {
+        const dataset = processAndCleanData(
+          localResult.headers,
+          localResult.rows,
+          isAr ? 'بياناتي المدخلة' : 'My Input Data'
+        );
+        // Append cleaning notes
+        if (localResult.cleaningNotes && localResult.cleaningNotes.length > 0) {
+          dataset.cleaningSummary.notes = [
+            ...localResult.cleaningNotes,
+            ...dataset.cleaningSummary.notes,
+          ];
+        }
+        onDatasetReady(dataset);
+      } else {
+        // Show confirmation modal
+        setConfirmationData({
+          isOpen: true,
+          headers: localResult.headers,
+          rows: localResult.rows,
+          columnTypes: localResult.columnTypes,
+          confidenceReason: localResult.confidenceReason,
+          cleaningNotes: localResult.cleaningNotes,
+        });
+      }
     } catch (err: any) {
       console.error(err);
       setErrorMessage(err.message);
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // User confirmed the data from confirmation modal
+  const handleModalConfirm = (confirmedHeaders: string[], confirmedRows: Record<string, any>[]) => {
+    const dataset = processAndCleanData(
+      confirmedHeaders,
+      confirmedRows,
+      isAr ? 'بياناتي المدخلة' : 'My Input Data'
+    );
+    if (confirmationData?.cleaningNotes && confirmationData.cleaningNotes.length > 0) {
+      dataset.cleaningSummary.notes = [
+        ...confirmationData.cleaningNotes,
+        ...dataset.cleaningSummary.notes,
+      ];
+    }
+    setConfirmationData(null);
+    onDatasetReady(dataset);
   };
 
   return (
@@ -185,19 +245,34 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
           className="text-2xl min-[380px]:text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-snug sm:leading-tight"
           style={{ color: theme.colors.primary }}
         >
-          {isAr ? 'عندك بيانات؟ سيب الباقي علينا.' : 'Got Data? Leave the rest to us.'}
+          {isAr ? 'عندك بيانات؟ اكتبها بطريقتك.' : 'Got Data? Write it your way.'}
         </h1>
         <p
           className="text-sm min-[380px]:text-base sm:text-xl lg:text-2xl leading-relaxed font-normal"
           style={{ color: `${theme.colors.textPrimary}D9` }}
         >
           {isAr
-            ? 'ارفع بياناتك أو اكتبها بطريقتك، وإحنا ننظمها ونحللها ونحوّلها لداشبورد واضحة من غير ما تحتاج تعرف Excel.'
-            : 'Upload your data or type it in your own words. We clean, organize, and turn it into a clear interactive dashboard without you needing to know Excel.'}
+            ? 'اكتب أو الصق بياناتك بأي شكل مناسب ليك، وإحنا هنحاول نفهمها ونرتبها قبل التحليل.'
+            : 'Type or paste your data in any form that suits you, and we will understand and organize it before analysis.'}
         </p>
 
         {/* Mode Switcher */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3.5 pt-2">
+          <button
+            onClick={() => setInputMode('manual')}
+            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-lg font-bold rounded-xl transition-all cursor-pointer shadow-xs border"
+            style={{
+              backgroundColor: inputMode === 'manual' ? theme.colors.primary : theme.colors.surface,
+              color: inputMode === 'manual' ? '#FFF9F2' : theme.colors.textPrimary,
+              borderColor: inputMode === 'manual' ? theme.colors.primary : theme.colors.border,
+            }}
+          >
+            <span className="flex items-center justify-center gap-2 sm:gap-2.5">
+              <PenTool className="w-4 h-4 sm:w-5 sm:h-5" />
+              {isAr ? 'اكتب بياناتك بطريقتك' : 'Write your data naturally'}
+            </span>
+          </button>
+
           <button
             onClick={() => setInputMode('upload')}
             className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-lg font-bold rounded-xl transition-all cursor-pointer shadow-xs border"
@@ -209,22 +284,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
           >
             <span className="flex items-center justify-center gap-2 sm:gap-2.5">
               <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
-              {isAr ? 'ابدأ التحليل' : 'Start Analysis (Upload)'}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setInputMode('manual')}
-            className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-lg font-bold rounded-xl transition-all cursor-pointer shadow-xs border"
-            style={{
-              backgroundColor: inputMode === 'manual' ? theme.colors.primary : theme.colors.surface,
-              color: inputMode === 'manual' ? '#FFF9F2' : theme.colors.textPrimary,
-              borderColor: inputMode === 'manual' ? theme.colors.primary : theme.colors.border,
-            }}
-          >
-            <span className="flex items-center justify-center gap-2 sm:gap-2.5">
-              <Table className="w-4 h-4 sm:w-5 sm:h-5" />
-              {isAr ? 'أدخل البيانات يدويًا' : 'Enter Data Manually'}
+              {isAr ? 'رفع ملف Excel أو CSV' : 'Upload Excel / CSV file'}
             </span>
           </button>
         </div>
@@ -251,7 +311,7 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
         </div>
       )}
 
-      {/* Main Box: File Upload or Manual Input */}
+      {/* Main Box: Natural Text Input (Default) or File Upload */}
       <div
         className="rounded-2xl border shadow-xs p-3.5 sm:p-9 relative overflow-hidden transition-all"
         style={{
@@ -259,7 +319,78 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
           borderColor: theme.colors.border,
         }}
       >
-        {inputMode === 'upload' ? (
+        {inputMode === 'manual' ? (
+          /* Primary Experience: "اكتب بياناتك بطريقتك، وإحنا هنرتبها." */
+          <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <label className="block text-sm sm:text-lg font-black" style={{ color: theme.colors.primary }}>
+                  {isAr ? 'اكتب بياناتك بطريقتك، وإحنا هنرتبها:' : 'Write your data naturally, we organize it:'}
+                </label>
+                <span className="text-xs sm:text-sm font-medium" style={{ color: `${theme.colors.textPrimary}99` }}>
+                  {isAr
+                    ? 'جدول، أسطر، نص مفصول بمسافات أو فواصل، عبارات، أو Markdown'
+                    : 'Table, lines, separated text, sentences, or Markdown'}
+                </span>
+              </div>
+
+              <textarea
+                value={manualText}
+                onChange={(e) => setManualText(e.target.value)}
+                rows={7}
+                placeholder={
+                  isAr
+                    ? 'اكتب أو الصق بياناتك هنا بأي شكل مريح ليك...\n\nأمثلة:\n- جدول أو أسطر: أحمد 3000 القاهرة، سارة 4500 الإسكندرية\n- أو بفاصلة: الطالب, الدرجة, المادة\n- أو كعبارات: العميل محمد اشترى لابتوب بسعر 25000\n- أو جدول منسوخ من أي مكان أو صفوف Markdown'
+                    : 'Type or paste your data here in any format...\n\nExamples:\n- Ahmed 3000 Cairo\n- Sara 4500 Alexandria\n- Or simple table, Markdown, or pasted text from anywhere'
+                }
+                className="w-full p-3.5 sm:p-5 text-xs sm:text-base font-mono rounded-xl focus:outline-none focus:ring-2 font-medium border leading-relaxed"
+                style={{
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.border,
+                  color: theme.colors.textPrimary,
+                }}
+              />
+            </div>
+
+            {/* Submit Action */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+              <div
+                className="flex items-center gap-2 text-xs sm:text-sm font-medium"
+                style={{ color: `${theme.colors.textPrimary}A0` }}
+              >
+                <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>
+                  {isAr
+                    ? 'الذكاء بيفهم الأعمدة والأنواع تلقائيًا، وممكن تراجعها قبل التحليل.'
+                    : 'Auto-detects columns & types, with a quick review if needed.'}
+                </span>
+              </div>
+
+              <button
+                onClick={handleNaturalTextSubmit}
+                disabled={isProcessing}
+                className="w-full sm:w-auto justify-center px-7 sm:px-9 py-3 sm:py-3.5 text-sm sm:text-lg font-black rounded-xl transition-all shadow-md inline-flex items-center gap-2.5 cursor-pointer disabled:opacity-50 shrink-0"
+                style={{
+                  backgroundColor: theme.colors.primary,
+                  color: '#FFF9F2',
+                }}
+              >
+                {isProcessing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>{isAr ? 'جاري الفهم والترتيب...' : 'Understanding & Organizing...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{isAr ? 'رتّب وابدأ التحليل' : 'Organize & Start Analysis'}</span>
+                    {isAr ? <ArrowLeft className="w-4.5 h-4.5" /> : <ArrowRight className="w-4.5 h-4.5" />}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* File Upload Mode (Preserved) */
           <div
             className="border-2 border-dashed rounded-xl p-4 sm:p-12 text-center transition-all cursor-pointer"
             style={{
@@ -334,71 +465,23 @@ export const HomeHero: React.FC<HomeHeroProps> = ({
               </div>
             </div>
           </div>
-        ) : (
-          /* Manual Input Mode */
-          <div className="space-y-4 sm:space-y-5">
-            <div>
-              <label className="block text-sm sm:text-base font-bold mb-2" style={{ color: theme.colors.textPrimary }}>
-                {isAr ? 'الصق جدولك أو اكتب بياناتك كنص عادي:' : 'Paste table or raw text:'}
-              </label>
-              <textarea
-                value={manualText}
-                onChange={(e) => setManualText(e.target.value)}
-                rows={5}
-                placeholder={
-                  isAr
-                    ? 'العميل, المدينة, المنتج, السعر, الكمية, التاريخ\nأحمد, القاهرة, لابتوب, 30000, 2, 2024-01-15\nسارة, الإسكندرية, سماعة, 2500, 3, 2024-01-18...'
-                    : 'Customer, City, Product, Price, Quantity, Date\nAhmed, Cairo, Laptop, 30000, 2, 2024-01-15\nSara, Alexandria, Headset, 2500, 3, 2024-01-18...'
-                }
-                className="w-full p-3 sm:p-4 text-xs sm:text-base font-mono rounded-xl focus:outline-none focus:ring-2 font-medium border"
-                style={{
-                  backgroundColor: theme.colors.background,
-                  borderColor: theme.colors.border,
-                  color: theme.colors.textPrimary,
-                }}
-              />
-            </div>
-
-            {/* Optional Natural Prompt */}
-            <div>
-              <label className="block text-sm sm:text-base font-bold mb-1.5" style={{ color: theme.colors.primary }}>
-                {isAr ? 'عايز تعمل إيه بالبيانات؟ (بلغتك العادية):' : 'What do you want to achieve? (natural language):'}
-              </label>
-              <div className="flex flex-col sm:flex-row gap-2.5">
-                <input
-                  type="text"
-                  value={userPrompt}
-                  onChange={(e) => setUserPrompt(e.target.value)}
-                  className="w-full flex-1 px-3.5 sm:px-4 py-2.5 text-sm sm:text-base rounded-xl focus:outline-none focus:ring-2 font-medium border"
-                  style={{
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.border,
-                    color: theme.colors.textPrimary,
-                  }}
-                />
-                <button
-                  onClick={handleManualSubmit}
-                  disabled={isProcessing}
-                  className="w-full sm:w-auto justify-center px-6 py-2.5 text-sm sm:text-base font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 shrink-0"
-                  style={{
-                    backgroundColor: theme.colors.primary,
-                    color: '#FFF9F2',
-                  }}
-                >
-                  {isProcessing ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <span>{isAr ? 'تنظيم وتحليل' : 'Process & Analyze'}</span>
-                      {isAr ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
         )}
       </div>
+
+      {/* Confirmation Modal when data structure was ambiguous */}
+      {confirmationData && (
+        <DataConfirmationModal
+          isOpen={confirmationData.isOpen}
+          isAr={isAr}
+          initialHeaders={confirmationData.headers}
+          initialRows={confirmationData.rows}
+          initialColumnTypes={confirmationData.columnTypes}
+          confidenceReason={confirmationData.confidenceReason}
+          cleaningNotes={confirmationData.cleaningNotes}
+          onConfirm={handleModalConfirm}
+          onCancel={() => setConfirmationData(null)}
+        />
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { CleanedDataset, ColumnMeta, ColumnType, DataRow } from '../types';
+import { CleanedDataset, ColumnMeta, ColumnType, DataRow, IgnoredRowRecord, SemanticRole } from '../types';
 
 /**
  * Strips currency marks, commas, and formatting from a string
@@ -129,7 +129,7 @@ export function parseSpreadsheetBuffer(buffer: ArrayBuffer, fileName: string): {
 }
 
 /**
- * Organizes, cleans, detects types, fills missing values, and calculates metadata
+ * Organizes, cleans, detects types, detects semantic roles, filters outliers, and calculates metadata
  */
 export function processAndCleanData(
   rawHeaders: string[],
@@ -140,14 +140,29 @@ export function processAndCleanData(
   let missingValuesFixed = 0;
   let anomaliesFound = 0;
   const notes: string[] = [];
+  const outlierNotes: string[] = [];
+  const ignoredRows: IgnoredRowRecord[] = [];
 
-  // 1. Identify types for each column
-  const columnMetas: ColumnMeta[] = rawHeaders.map((header) => {
-    let numericCount = 0;
-    let dateCount = 0;
+  // 1. First pass: Inspect sample values and raw stats for each column
+  interface RawColStats {
+    header: string;
+    missingCount: number;
+    sampleValues: (string | number)[];
+    uniqueSet: Set<string>;
+    numCount: number;
+    dateCount: number;
+    numericVals: number[];
+  }
+
+  const rawStatsMap: Map<string, RawColStats> = new Map();
+
+  rawHeaders.forEach((header) => {
     let missingCount = 0;
+    let numCount = 0;
+    let dateCount = 0;
     const sampleValues: (string | number)[] = [];
     const uniqueSet = new Set<string>();
+    const numericVals: number[] = [];
 
     rawRows.forEach((row) => {
       const val = row[header];
@@ -155,96 +170,259 @@ export function processAndCleanData(
         missingCount++;
         return;
       }
-      uniqueSet.add(String(val));
-      if (sampleValues.length < 5) {
+      const strVal = String(val).trim();
+      uniqueSet.add(strVal);
+      if (sampleValues.length < 6) {
         sampleValues.push(val);
       }
 
-      const { isNum } = cleanNumericValue(val);
-      if (isNum) numericCount++;
-      if (isDateString(val)) dateCount++;
+      const { isNum, num } = cleanNumericValue(val);
+      if (isNum) {
+        numCount++;
+        numericVals.push(num);
+      }
+      if (isDateString(val)) {
+        dateCount++;
+      }
     });
 
-    const validCount = rawRows.length - missingCount;
-    const numRatio = validCount > 0 ? numericCount / validCount : 0;
-    const dateRatio = validCount > 0 ? dateCount / validCount : 0;
+    rawStatsMap.set(header, {
+      header,
+      missingCount,
+      sampleValues,
+      uniqueSet,
+      numCount,
+      dateCount,
+      numericVals,
+    });
+  });
 
-    let colType: ColumnType = 'category';
+  // 2. Identify Semantic Role & Column Type for each column
+  const columnMetas: ColumnMeta[] = rawHeaders.map((header) => {
+    const stats = rawStatsMap.get(header)!;
+    const validCount = rawRows.length - stats.missingCount;
+    const numRatio = validCount > 0 ? stats.numCount / validCount : 0;
+    const dateRatio = validCount > 0 ? stats.dateCount / validCount : 0;
     const lowerHeader = header.toLowerCase();
 
-    // Check for ID column
+    // Semantic patterns
     const isIdHeader =
-      lowerHeader.includes('id') ||
-      lowerHeader.includes('كود') ||
-      lowerHeader.includes('رقم') ||
-      lowerHeader.includes('مسلسل');
+      /^(id|كود|رمز|رقم|مسلسل|serial|sku|code|customer_id|order_id|client_id|user_id|ref|reference|uuid)$/i.test(lowerHeader) ||
+      /(_id|\bid\b|كود|مسلسل|رقم_العميل|رقم_الطلب|رقم_الفاتورة|رقم_المستخدم)/i.test(lowerHeader);
 
-    if (dateRatio > 0.6 || lowerHeader.includes('تاريخ') || lowerHeader.includes('date') || lowerHeader.includes('شهر') || lowerHeader.includes('month')) {
+    const isDateHeader =
+      /تاريخ|وقت|date|time|timestamp|created_at|updated_at|day|month|year|سنة|شهر|يوم|فترة/i.test(lowerHeader);
+
+    const isRatingHeader =
+      /تقييم|rating|rate|stars|نجوم|score|رضا|satisfaction|درجة|مستوى|جودة|quality|feedback/i.test(lowerHeader);
+
+    const isAgeHeader =
+      /عمر|age|سن|أعمار|سنوات_العمر/i.test(lowerHeader);
+
+    const isFinancialHeader =
+      /سعر|price|cost|تكلفة|مبيعات|sales|إجمالي|total|مبلغ|amount|revenue|إيرادات|أرباح|profit|كمية|qty|quantity|عدد|شحن|shipping|رسوم|fees|راتب|salary|مصروف|expense|خصم|discount|قيمة/i.test(lowerHeader);
+
+    let colType: ColumnType = 'category';
+    let semanticRole: SemanticRole = 'categorical';
+    let semanticRoleLabelAr = 'تصنيف (Categorical)';
+    let semanticRoleLabelEn = 'Categorical';
+    let allowedOperations: ColumnMeta['allowedOperations'] = ['count', 'distribution', 'unique_count'];
+
+    // Classification Decision Tree
+    if (dateRatio > 0.6 || (isDateHeader && stats.dateCount > 0)) {
       colType = 'date';
-    } else if (numRatio > 0.7 && (!isIdHeader || uniqueSet.size < rawRows.length * 0.9)) {
-      colType = 'numeric';
-    } else if (isIdHeader && uniqueSet.size > rawRows.length * 0.8) {
+      semanticRole = 'timestamp';
+      semanticRoleLabelAr = 'تسلسل زمني / تاريخ (Timestamp)';
+      semanticRoleLabelEn = 'Timestamp / Date';
+      allowedOperations = ['timeline', 'count'];
+    } else if (isIdHeader || (numRatio > 0.8 && stats.uniqueSet.size >= Math.max(3, rawRows.length * 0.85) && /id|كود|مسلسل|رمز/i.test(lowerHeader))) {
       colType = 'id';
-    } else if (uniqueSet.size > 50 && rawRows.length > 50 && numRatio < 0.2) {
+      semanticRole = 'identifier';
+      semanticRoleLabelAr = 'معرّف فريد (Unique Identifier)';
+      semanticRoleLabelEn = 'Identifier';
+      allowedOperations = ['unique_count'];
+    } else if (isRatingHeader && numRatio > 0.5) {
+      colType = 'rating';
+      semanticRole = 'numeric_discrete';
+      semanticRoleLabelAr = 'رقمي منفصل - تقييم (Rating)';
+      semanticRoleLabelEn = 'Discrete Rating';
+      allowedOperations = ['avg', 'median', 'distribution'];
+    } else if (isAgeHeader && numRatio > 0.5) {
+      colType = 'age';
+      semanticRole = 'numeric_discrete';
+      semanticRoleLabelAr = 'رقمي منفصل - عمر (Age)';
+      semanticRoleLabelEn = 'Discrete Age';
+      allowedOperations = ['avg', 'median', 'distribution'];
+    } else if (numRatio > 0.7) {
+      // Check if values behave as discrete 1-5 ratings despite generic header
+      const minVal = stats.numericVals.length > 0 ? Math.min(...stats.numericVals) : 0;
+      const maxVal = stats.numericVals.length > 0 ? Math.max(...stats.numericVals) : 0;
+      const isDiscrete1To5 = minVal >= 1 && maxVal <= 5 && stats.numericVals.every((v) => Number.isInteger(v * 2));
+
+      if (isDiscrete1To5 && !isFinancialHeader) {
+        colType = 'rating';
+        semanticRole = 'numeric_discrete';
+        semanticRoleLabelAr = 'رقمي منفصل - مقياس (Discrete Score)';
+        semanticRoleLabelEn = 'Discrete Score (1-5)';
+        allowedOperations = ['avg', 'median', 'distribution'];
+      } else {
+        colType = 'numeric';
+        semanticRole = 'numeric_financial';
+        semanticRoleLabelAr = isFinancialHeader ? 'مالي / كمية (Financial/Quantity)' : 'رقمي متصل (Continuous Metric)';
+        semanticRoleLabelEn = 'Numeric Financial / Quantity';
+        allowedOperations = ['sum', 'avg', 'min', 'max'];
+      }
+    } else if (stats.uniqueSet.size > 50 && rawRows.length > 50 && numRatio < 0.2) {
       colType = 'text';
+      semanticRole = 'categorical';
+      semanticRoleLabelAr = 'نص وصفي (Descriptive Text)';
+      semanticRoleLabelEn = 'Text';
+      allowedOperations = ['count', 'unique_count'];
     } else {
       colType = 'category';
+      semanticRole = 'categorical';
+      semanticRoleLabelAr = 'تصنيف (Categorical)';
+      semanticRoleLabelEn = 'Categorical';
+      allowedOperations = ['count', 'distribution', 'unique_count'];
     }
 
-    // Inferred business role
-    let inferredRole: 'metric' | 'dimension' | 'time' | 'identifier' | 'attribute' = 'dimension';
-    if (colType === 'numeric') inferredRole = 'metric';
-    else if (colType === 'date') inferredRole = 'time';
-    else if (colType === 'id') inferredRole = 'identifier';
-    else inferredRole = 'dimension';
+    // Inferred role for backward compatibility
+    let inferredRole: ColumnMeta['inferredRole'] = 'dimension';
+    if (semanticRole === 'numeric_financial' || semanticRole === 'numeric_discrete') {
+      inferredRole = 'metric';
+    } else if (semanticRole === 'timestamp') {
+      inferredRole = 'time';
+    } else if (semanticRole === 'identifier') {
+      inferredRole = 'identifier';
+    }
 
     return {
       key: header,
       label: header,
       type: colType,
       inferredRole,
-      sampleValues,
-      missingCount,
-      uniqueCount: uniqueSet.size,
+      semanticRole,
+      semanticRoleLabelAr,
+      semanticRoleLabelEn,
+      allowedOperations,
+      sampleValues: stats.sampleValues,
+      missingCount: stats.missingCount,
+      uniqueCount: stats.uniqueSet.size,
     };
   });
 
-  // 2. Clean values & compute stats
+  // 3. Outlier and Preprocessing Filter: Inspect each row and separate corrupted/extreme outliers
   const cleanedRows: DataRow[] = [];
+  const validRowIndices = new Set<number>();
 
-  rawRows.forEach((row) => {
+  rawRows.forEach((row, rowIdx) => {
+    let rowHasOutlier = false;
     const cleanRow: DataRow = {};
+
     columnMetas.forEach((col) => {
       const rawVal = row[col.key];
 
       if (rawVal === null || rawVal === undefined || String(rawVal).trim() === '' || String(rawVal).toLowerCase() === 'n/a') {
         missingValuesFound++;
-        if (col.type === 'numeric') {
-          cleanRow[col.key] = 0;
-          missingValuesFixed++;
-        } else {
-          cleanRow[col.key] = null;
-        }
+        cleanRow[col.key] = null;
         return;
       }
 
-      if (col.type === 'numeric') {
+      // Check numeric/discrete/timestamp consistency
+      if (col.type === 'rating' || (col.semanticRole === 'numeric_discrete' && /تقييم|rating|stars|نجوم|رضا/i.test(col.key))) {
         const { isNum, num } = cleanNumericValue(rawVal);
-        if (isNum) {
+        if (!isNum) {
+          rowHasOutlier = true;
+          anomaliesFound++;
+          ignoredRows.push({
+            rowIndex: rowIdx + 1,
+            columnKey: col.key,
+            columnLabel: col.label,
+            value: rawVal,
+            reason: `Invalid non-numeric rating entry: "${rawVal}"`,
+            reasonAr: `قيمة التقييم غير صالحة ("${rawVal}") في حقل "${col.label}"`,
+          });
+          cleanRow[col.key] = null;
+        } else if (num < 1 || num > 5) {
+          // Outlier detected: Rating outside valid Likert range 1-5
+          rowHasOutlier = true;
+          anomaliesFound++;
+          ignoredRows.push({
+            rowIndex: rowIdx + 1,
+            columnKey: col.key,
+            columnLabel: col.label,
+            value: num,
+            reason: `Rating ${num} is outside acceptable 1-5 scale`,
+            reasonAr: `التقييم (${num}) خارج النطاق المقبول (1 إلى 5) في حقل "${col.label}"`,
+          });
           cleanRow[col.key] = num;
         } else {
-          cleanRow[col.key] = 0;
+          cleanRow[col.key] = num;
+        }
+      } else if (col.type === 'age' || (col.semanticRole === 'numeric_discrete' && /عمر|age|سن/i.test(col.key))) {
+        const { isNum, num } = cleanNumericValue(rawVal);
+        if (!isNum || num < 0 || num > 120) {
+          rowHasOutlier = true;
           anomaliesFound++;
-          missingValuesFixed++;
+          ignoredRows.push({
+            rowIndex: rowIdx + 1,
+            columnKey: col.key,
+            columnLabel: col.label,
+            value: rawVal,
+            reason: `Unrealistic or corrupted age value: "${rawVal}" (expected 0-120)`,
+            reasonAr: `عمر غير واقعي أو شاذ ("${rawVal}") في حقل "${col.label}"`,
+          });
+          cleanRow[col.key] = isNum ? num : null;
+        } else {
+          cleanRow[col.key] = num;
+        }
+      } else if (col.semanticRole === 'numeric_financial') {
+        const { isNum, num } = cleanNumericValue(rawVal);
+        if (!isNum) {
+          rowHasOutlier = true;
+          anomaliesFound++;
+          ignoredRows.push({
+            rowIndex: rowIdx + 1,
+            columnKey: col.key,
+            columnLabel: col.label,
+            value: rawVal,
+            reason: `Corrupted non-numeric value: "${rawVal}" in numeric field`,
+            reasonAr: `قيمة رقمية تالفة ("${rawVal}") في حقل "${col.label}"`,
+          });
+          cleanRow[col.key] = 0;
+        } else {
+          // In financial fields like price or quantity, check for negative corruption
+          if (num < 0 && /سعر|كمية|qty|price|شحن/i.test(col.key) && !/خصم|discount|مرتجع/i.test(col.key)) {
+            rowHasOutlier = true;
+            anomaliesFound++;
+            ignoredRows.push({
+              rowIndex: rowIdx + 1,
+              columnKey: col.key,
+              columnLabel: col.label,
+              value: num,
+              reason: `Unexpected negative value (${num}) in non-negative column`,
+              reasonAr: `قيمة سالبة غير مقبولة (${num}) في حقل "${col.label}"`,
+            });
+          }
+          cleanRow[col.key] = num;
         }
       } else {
         cleanRow[col.key] = String(rawVal).trim();
       }
     });
+
     cleanedRows.push(cleanRow);
+    if (!rowHasOutlier) {
+      validRowIndices.add(rowIdx);
+    }
   });
 
-  // 3. Auto-calculate Total Sales if Quantity and Price exist and Total is not present
+  // 4. Form separate analytical view (pure valid rows without outliers)
+  const analyticalRows = cleanedRows.filter((_, idx) => validRowIndices.has(idx));
+  const validRowsCount = analyticalRows.length;
+  const ignoredRowsCount = cleanedRows.length - validRowsCount;
+
+  // 5. Auto-calculate Total Sales if Quantity and Price exist and Total is not present
   const hasPrice = columnMetas.find((c) => /سعر|price|unit_price/i.test(c.key));
   const hasQty = columnMetas.find((c) => /كمية|qty|quantity/i.test(c.key));
   const hasTotal = columnMetas.find((c) => /إجمالي|total|مجموع|sales|مبيعات/i.test(c.key));
@@ -262,6 +440,10 @@ export function processAndCleanData(
       label: totalKey,
       type: 'numeric',
       inferredRole: 'metric',
+      semanticRole: 'numeric_financial',
+      semanticRoleLabelAr: 'مالي / إجمالي مبيعات (Sales)',
+      semanticRoleLabelEn: 'Sales Metric',
+      allowedOperations: ['sum', 'avg', 'min', 'max'],
       sampleValues: cleanedRows.slice(0, 5).map((r) => r[totalKey] as number),
       missingCount: 0,
       uniqueCount: new Set(cleanedRows.map((r) => r[totalKey])).size,
@@ -269,22 +451,90 @@ export function processAndCleanData(
     notes.push('تم حساب إجمالي المبيعات تلقائيًا بضرب السعر في الكمية.');
   }
 
-  // 4. Update numerical summaries
+  // 6. Calculate accurate, role-specific metrics strictly from analyticalRows
   columnMetas.forEach((col) => {
-    if (col.type === 'numeric') {
-      const nums = cleanedRows.map((r) => Number(r[col.key]) || 0);
+    // Only use rows where value is valid and not excluded
+    const analyticalValues = analyticalRows
+      .map((r) => r[col.key])
+      .filter((v) => v !== null && v !== undefined);
+
+    col.validCount = analyticalValues.length;
+    col.ignoredCount = rawRows.length - analyticalValues.length;
+
+    if (col.semanticRole === 'numeric_financial') {
+      const nums = analyticalValues.map((v) => Number(v) || 0);
       col.sum = nums.reduce((a, b) => a + b, 0);
-      col.min = Math.min(...nums);
-      col.max = Math.max(...nums);
+      col.min = nums.length > 0 ? Math.min(...nums) : 0;
+      col.max = nums.length > 0 ? Math.max(...nums) : 0;
       col.avg = nums.length > 0 ? col.sum / nums.length : 0;
+    } else if (col.semanticRole === 'numeric_discrete') {
+      // Discrete metric (Ratings, Ages) -> NEVER compute sum! Calculate Mean, Median, and Distribution
+      const nums = analyticalValues.map((v) => Number(v) || 0).sort((a, b) => a - b);
+      if (nums.length > 0) {
+        col.min = Math.min(...nums);
+        col.max = Math.max(...nums);
+        const total = nums.reduce((a, b) => a + b, 0);
+        col.avg = Number((total / nums.length).toFixed(2));
+
+        // Median
+        const mid = Math.floor(nums.length / 2);
+        col.median = nums.length % 2 !== 0 ? nums[mid] : Number(((nums[mid - 1] + nums[mid]) / 2).toFixed(2));
+
+        // Distribution frequency
+        const freqMap = new Map<string, number>();
+        nums.forEach((n) => {
+          const key = col.type === 'rating' ? `${n} نجوم` : String(n);
+          freqMap.set(key, (freqMap.get(key) || 0) + 1);
+        });
+
+        col.distribution = Array.from(freqMap.entries()).map(([label, count]) => ({
+          label,
+          count,
+          percentage: Math.round((count / nums.length) * 100),
+        }));
+      }
+      // Explicitly delete/omit sum to prevent accidental blind usage
+      delete col.sum;
+    } else if (col.semanticRole === 'identifier') {
+      // ID columns -> ONLY uniqueCount, NEVER sum or avg
+      delete col.sum;
+      delete col.avg;
+    } else if (col.semanticRole === 'timestamp') {
+      // Timestamp -> NEVER sum
+      delete col.sum;
+      delete col.avg;
+    } else if (col.semanticRole === 'categorical') {
+      // Distribution breakdown
+      const freqMap = new Map<string, number>();
+      analyticalValues.forEach((v) => {
+        const str = String(v);
+        freqMap.set(str, (freqMap.get(str) || 0) + 1);
+      });
+      const total = analyticalValues.length;
+      col.distribution = Array.from(freqMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([label, count]) => ({
+          label,
+          count,
+          percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+        }));
+      delete col.sum;
+      delete col.avg;
     }
   });
 
+  // 7. Compose transparency notes
+  if (ignoredRowsCount > 0) {
+    const summaryMsg = `تم استبعاد ${ignoredRowsCount} سجل شاذ أو غير صالح من الحسابات الإحصائية لضمان نزاهة التحليل.`;
+    outlierNotes.push(summaryMsg);
+    notes.push(summaryMsg);
+  }
   if (missingValuesFixed > 0) {
     notes.push(`تم تصحيح وتعبئة ${missingValuesFixed} قيمة مفقودة أو غير منتظمة.`);
   }
   if (notes.length === 0) {
-    notes.push('البيانات منظمة ونظيفة بالكامل وجاهزة للتحليل الفوري.');
+    notes.push('البيانات منظمة ونظيفة بالكامل وخالية من القيم الشاذة، وجاهزة للتحليل الفوري.');
   }
 
   return {
@@ -294,12 +544,19 @@ export function processAndCleanData(
     updatedAt: new Date().toISOString(),
     columns: columnMetas,
     rows: cleanedRows,
+    analyticalRows,
     totalRows: cleanedRows.length,
+    validRowsCount,
+    ignoredRowsCount,
+    ignoredRows,
     totalColumns: columnMetas.length,
     cleaningSummary: {
       missingValuesFound,
       missingValuesFixed,
       anomaliesFound,
+      validRowsCount,
+      ignoredRowsCount,
+      outlierDetails: ignoredRows.map((r) => `صف #${r.rowIndex}: ${r.reasonAr}`),
       notes,
     },
   };

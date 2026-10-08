@@ -58,18 +58,20 @@ export const AI_FALLBACK_NOTICE_EN =
   'Smart AI is temporarily unavailable, but your data and dashboard are safely preserved, and you can continue using all core tools.';
 
 /**
- * Parses raw text: Uses zero-AI local parser first if tabular, only calls AI for unstructured paragraphs
+ * Parses raw text: Uses smart local parser first, only calls AI for unstructured sentences or ambiguous notes
  */
 export async function parseUnstructuredTextWithAI(
   text: string,
   language: 'ar' | 'en' = 'ar'
-): Promise<{ headers: string[]; rows: any[]; notes?: string[] } | null> {
-  // If text already looks tabular (has tabs, commas, line breaks), skip AI entirely to preserve API limits
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length >= 2 && (lines[0].includes(',') || lines[0].includes('\t') || lines[0].includes('|'))) {
-    return null; // Signals the app to use local parser directly
-  }
-
+): Promise<{
+  headers: string[];
+  rows: any[];
+  columnTypes?: Record<string, any>;
+  isConfident?: boolean;
+  confidenceScore?: number;
+  confidenceReason?: string;
+  notes?: string[];
+} | null> {
   try {
     const res = await fetch('/api/ai/parse-text', {
       method: 'POST',
@@ -95,6 +97,10 @@ export async function parseUnstructuredTextWithAI(
       return {
         headers: data.columns,
         rows: data.rows,
+        columnTypes: data.columnTypes,
+        isConfident: data.isConfident,
+        confidenceScore: data.confidenceScore,
+        confidenceReason: data.confidenceReason,
         notes: data.cleaningNotes,
       };
     }

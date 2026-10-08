@@ -20,6 +20,12 @@ import {
   ArrowUpRight,
   BarChart3,
   CheckCircle2,
+  ShieldCheck,
+  AlertTriangle,
+  Layers,
+  Info,
+  Hash,
+  Star,
 } from 'lucide-react';
 import {
   CleanedDataset,
@@ -86,6 +92,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [isInvestigatorOpen, setIsInvestigatorOpen] = useState(false);
   const [investigationResult, setInvestigationResult] = useState<InvestigationResult | null>(null);
   const [isInvestigating, setIsInvestigating] = useState(false);
+  const [showAuditDetails, setShowAuditDetails] = useState(false);
 
   // Filtered rows if activeFilter is present
   const filteredRows = dataset.rows.filter((r) => {
@@ -396,6 +403,176 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
+        {/* DATA QUALITY & SEMANTIC ROLE ARCHITECTURE AUDIT CARD */}
+        <section
+          className="rounded-2xl border p-4 sm:p-6 transition-all shadow-xs"
+          style={{
+            backgroundColor: theme.colors.surface,
+            borderColor: dataset.ignoredRowsCount > 0 ? '#F59E0B66' : theme.colors.border,
+          }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b" style={{ borderColor: theme.colors.border }}>
+            <div className="flex items-center gap-3">
+              <div
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  backgroundColor: dataset.ignoredRowsCount > 0 ? '#FEF3C7' : `${theme.colors.primary}15`,
+                  color: dataset.ignoredRowsCount > 0 ? '#D97706' : theme.colors.primary,
+                }}
+              >
+                {dataset.ignoredRowsCount > 0 ? (
+                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                ) : (
+                  <ShieldCheck className="w-5 h-5" style={{ color: theme.colors.primary }} />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm sm:text-base font-black" style={{ color: theme.colors.textPrimary }}>
+                    {isAr ? 'نظام تدقيق الجودة والأدوار الدلالية (Data Quality & Semantic Engine)' : 'Semantic Role & Data Quality Engine'}
+                  </h3>
+                  <span
+                    className="text-xs font-bold px-2.5 py-0.5 rounded-full"
+                    style={{
+                      backgroundColor: dataset.ignoredRowsCount > 0 ? '#FEF3C7' : '#D1FAE5',
+                      color: dataset.ignoredRowsCount > 0 ? '#92400E' : '#065F46',
+                    }}
+                  >
+                    {isAr
+                      ? `${dataset.validRowsCount} من ${dataset.totalRows} سجل صالح للتحليل`
+                      : `${dataset.validRowsCount} of ${dataset.totalRows} records valid`}
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-medium mt-0.5" style={{ color: `${theme.colors.textPrimary}B8` }}>
+                  {isAr
+                    ? 'يتم فحص كل عمود لتحديد دوره الدلالي (تقييم، عمر، معرّف، تسلسل زمني، أو مالي) لمنع الجمع العشوائي واستبعاد القيم الشاذة.'
+                    : 'Each column is classified into its semantic role to prevent blind sums and separate outliers.'}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowAuditDetails(!showAuditDetails)}
+              className="no-print self-start sm:self-auto px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border flex items-center gap-1.5 transition-all cursor-pointer hover:shadow-xs"
+              style={{
+                backgroundColor: theme.colors.background,
+                borderColor: theme.colors.border,
+                color: theme.colors.primary,
+              }}
+            >
+              <span>{showAuditDetails ? (isAr ? 'إخفاء التفاصيل' : 'Hide Details') : (isAr ? 'عرض تقرير التدقيق' : 'View Audit Details')}</span>
+              {showAuditDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
+          {/* Quick Column Semantic Tags */}
+          <div className="mt-3.5 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-gray-500">
+              {isAr ? 'الأدوار الدلالية المكتشفة:' : 'Detected Roles:'}
+            </span>
+            {dataset.columns.map((col) => (
+              <span
+                key={col.key}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border"
+                style={{
+                  backgroundColor:
+                    col.semanticRole === 'numeric_discrete'
+                      ? '#EEF2FF'
+                      : col.semanticRole === 'identifier'
+                      ? '#F1F5F9'
+                      : col.semanticRole === 'timestamp'
+                      ? '#FAF5FF'
+                      : col.semanticRole === 'numeric_financial'
+                      ? '#ECFDF5'
+                      : '#FFFBEB',
+                  borderColor:
+                    col.semanticRole === 'numeric_discrete'
+                      ? '#C7D2FE'
+                      : col.semanticRole === 'identifier'
+                      ? '#CBD5E1'
+                      : col.semanticRole === 'timestamp'
+                      ? '#E9D5FF'
+                      : col.semanticRole === 'numeric_financial'
+                      ? '#A7F3D0'
+                      : '#FDE68A',
+                  color: '#1E293B',
+                }}
+                title={isAr ? `العمليات المسموحة: ${col.allowedOperations.join(', ')}` : `Allowed: ${col.allowedOperations.join(', ')}`}
+              >
+                <span className="font-semibold">{col.label}:</span>
+                <span className="text-gray-700">
+                  {isAr ? col.semanticRoleLabelAr : col.semanticRoleLabelEn}
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/80 font-mono font-medium">
+                  {col.semanticRole === 'numeric_discrete'
+                    ? (isAr ? 'المتوسط والوسيط فقط ✕ منع الجمع' : 'Mean & Median (No Sum)')
+                    : col.semanticRole === 'identifier'
+                    ? (isAr ? 'قيم فريدة فقط' : 'Unique Count Only')
+                    : col.semanticRole === 'timestamp'
+                    ? (isAr ? 'تكرار زمني' : 'Timeline')
+                    : col.semanticRole === 'numeric_financial'
+                    ? (isAr ? 'جمع ومتوسط' : 'Sum & Avg')
+                    : (isAr ? 'توزيع ونسب' : 'Counts & %')}
+                </span>
+              </span>
+            ))}
+          </div>
+
+          {/* Expandable Audit Log & Outlier Drawer */}
+          {showAuditDetails && (
+            <div className="mt-4 pt-4 border-t space-y-4 animate-fade-in" style={{ borderColor: theme.colors.border }}>
+              {dataset.ignoredRowsCount > 0 ? (
+                <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs sm:text-sm">
+                  <div className="font-bold flex items-center gap-1.5 text-amber-800 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      {isAr
+                        ? `تم رصد ${dataset.ignoredRowsCount} قيمة شاذة/غير صالحة وتم استبعادها من الحسابات الإحصائية:`
+                        : `Detected ${dataset.ignoredRowsCount} anomalous entries excluded from metrics:`}
+                    </span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-right text-xs">
+                      <thead>
+                        <tr className="border-b border-amber-200 font-bold text-amber-950">
+                          <th className="py-1 px-2">{isAr ? 'رقم الصف' : 'Row'}</th>
+                          <th className="py-1 px-2">{isAr ? 'العمود' : 'Column'}</th>
+                          <th className="py-1 px-2">{isAr ? 'القيمة المرصودة' : 'Value'}</th>
+                          <th className="py-1 px-2">{isAr ? 'سبب الاستبعاد من التحليل' : 'Reason'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dataset.ignoredRows.map((item, idx) => (
+                          <tr key={idx} className="border-b border-amber-100 hover:bg-amber-100/40">
+                            <td className="py-1.5 px-2 font-mono font-bold">#{item.rowIndex}</td>
+                            <td className="py-1.5 px-2 font-bold">{item.columnLabel}</td>
+                            <td className="py-1.5 px-2 font-mono bg-white/70 px-1 rounded inline-block my-1">{String(item.value)}</td>
+                            <td className="py-1.5 px-2 text-amber-800">{isAr ? item.reasonAr : item.reason}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="mt-2 text-[11px] text-amber-700 font-medium">
+                    {isAr
+                      ? 'ملاحظة: البيانات الأصلية محفوظة بالكامل في جدول المعاينة، لكن العمليات الإحصائية (المتوسطات والإجماليات) اعتمدت فقط على السجلات الصالحة.'
+                      : 'Note: Original records are preserved in the table view, but metrics are calculated strictly from valid rows.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3.5 rounded-xl bg-emerald-50/80 border border-emerald-200 text-emerald-900 text-xs sm:text-sm flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    {isAr
+                      ? 'جميع السجلات صالحة ونظيفة 100% ولا توجد أي قيم شاذة أو متضاربة في هذا الجدول.'
+                      : 'All records are 100% valid and verified with zero anomalous values.'}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
         {/* 2. SECTION: KEY METRICS */}
         <section className="space-y-3.5 sm:space-y-4 break-inside-avoid">
           <div className="flex items-center justify-between px-1">
@@ -460,12 +637,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   />
 
                   <div className="flex items-start justify-between gap-3 mb-3 sm:mb-4">
-                    <span
-                      className="text-sm sm:text-lg font-bold truncate max-w-[210px]"
-                      style={{ color: theme.colors.textPrimary }}
-                    >
-                      {isAr ? kpi.labelAr : kpi.label}
-                    </span>
+                    <div className="flex flex-col">
+                      <span
+                        className="text-sm sm:text-lg font-bold truncate max-w-[210px]"
+                        style={{ color: theme.colors.textPrimary }}
+                      >
+                        {isAr ? kpi.labelAr : kpi.label}
+                      </span>
+                      {kpi.calculationType && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded border"
+                            style={{
+                              backgroundColor: `${theme.colors.primary}0D`,
+                              borderColor: `${theme.colors.primary}25`,
+                              color: theme.colors.primary,
+                            }}
+                          >
+                            {kpi.calculationType === 'avg'
+                              ? (isAr ? 'متوسط حسابي (Mean)' : 'Mean (Average)')
+                              : kpi.calculationType === 'unique_count'
+                              ? (isAr ? 'قيم فريدة (Unique)' : 'Unique Count')
+                              : kpi.calculationType === 'distribution'
+                              ? (isAr ? 'توزيع ونسب (%)' : 'Distribution %')
+                              : kpi.calculationType === 'sum'
+                              ? (isAr ? 'إجمالي (Sum)' : 'Sum Total')
+                              : (isAr ? 'تعداد' : 'Count')}
+                          </span>
+                          {kpi.validRowsUsed !== undefined && (
+                            <span className="text-[10px] opacity-75 font-mono">
+                              ({kpi.validRowsUsed} {isAr ? 'سجل' : 'rows'})
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <div
                       className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
                       style={iconBadgeStyle}

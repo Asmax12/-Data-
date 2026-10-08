@@ -1,10 +1,32 @@
-export type ColumnType = 'numeric' | 'category' | 'date' | 'text' | 'id';
+export type ColumnType = 'numeric' | 'category' | 'date' | 'text' | 'id' | 'rating' | 'age';
+
+export type SemanticRole =
+  | 'numeric_financial' // Financial/Quantity (Price, Sales, Revenue, Cost, Amount, Quantity): Sum, Avg, Min, Max
+  | 'numeric_discrete'  // Discrete Numeric (Age, Rating 1-5, Score): Average (Mean), Median, Distribution. (NEVER Sum)
+  | 'identifier'        // IDs, codes, serials: Unique Count only. (NEVER Sum or Avg)
+  | 'categorical'       // Cities, names, gender, categories: Value Counts, Mode, Percentages
+  | 'timestamp';        // Timestamps/Dates: Timeline / frequency distribution over time. (NEVER Sum)
+
+export type AllowedAggregationOp =
+  | 'sum'
+  | 'avg'
+  | 'median'
+  | 'min'
+  | 'max'
+  | 'count'
+  | 'unique_count'
+  | 'distribution'
+  | 'timeline';
 
 export interface ColumnMeta {
   key: string;
   label: string;
   type: ColumnType;
   inferredRole: 'metric' | 'dimension' | 'time' | 'identifier' | 'attribute';
+  semanticRole: SemanticRole;
+  semanticRoleLabelAr: string;
+  semanticRoleLabelEn: string;
+  allowedOperations: AllowedAggregationOp[];
   sampleValues: (string | number)[];
   missingCount: number;
   uniqueCount: number;
@@ -12,9 +34,23 @@ export interface ColumnMeta {
   max?: number;
   sum?: number;
   avg?: number;
+  median?: number;
+  validCount?: number;
+  ignoredCount?: number;
+  distribution?: { label: string; count: number; percentage: number }[];
+  outlierNotes?: string[];
 }
 
 export type DataRow = Record<string, string | number | null>;
+
+export interface IgnoredRowRecord {
+  rowIndex: number;
+  columnKey: string;
+  columnLabel: string;
+  value: any;
+  reason: string;
+  reasonAr: string;
+}
 
 export interface CleanedDataset {
   id: string;
@@ -23,12 +59,19 @@ export interface CleanedDataset {
   updatedAt: string;
   columns: ColumnMeta[];
   rows: DataRow[];
+  analyticalRows: DataRow[];
   totalRows: number;
+  validRowsCount: number;
+  ignoredRowsCount: number;
+  ignoredRows: IgnoredRowRecord[];
   totalColumns: number;
   cleaningSummary: {
     missingValuesFound: number;
     missingValuesFixed: number;
     anomaliesFound: number;
+    validRowsCount: number;
+    ignoredRowsCount: number;
+    outlierDetails: string[];
     notes: string[];
   };
 }
@@ -46,6 +89,10 @@ export interface KPIItem {
   iconName?: string;
   metricKey?: string;
   enabled?: boolean;
+  semanticRole?: SemanticRole;
+  calculationType?: 'sum' | 'avg' | 'median' | 'count' | 'unique_count' | 'distribution' | 'timeline';
+  validRowsUsed?: number;
+  ignoredRowsCount?: number;
 }
 
 export interface InsightItem {
@@ -66,7 +113,7 @@ export interface ChartConfig {
   type: ChartType;
   dimensionKey: string;
   metricKey: string;
-  aggregation: 'sum' | 'avg' | 'count';
+  aggregation: 'sum' | 'avg' | 'count' | 'distribution' | 'median' | 'timeline';
   data: { label: string; value: number; secondaryValue?: number; percentage?: number }[];
   descriptionAr?: string;
   descriptionEn?: string;

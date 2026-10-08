@@ -81,27 +81,33 @@ app.post('/api/ai/parse-text', async (req, res) => {
       });
     }
 
-    const prompt = `You are DataMate, an intelligent, friendly data assistant.
-A user provided unstructured or semi-structured raw text that contains records or information.
-Convert this into clean tabular data with consistent columns and rows.
-Normalize headers into standard, clear names (e.g. "Customer", "City", "Product", "Price", "Quantity", "Total", "Date").
-Fix typos, missing fields (use null or 0), and detect proper numeric values.
+    const prompt = `You are DataMate, an intelligent generic data assistant.
+A user provided raw natural text, unstructured sentences, a copied table, or notes containing records across ANY possible domain (e.g. Sales, Students, Employees, Expenses, Inventory, Customers, Surveys, Attendance, Marketing, Financials, etc.).
 
-Language preference: ${language === 'ar' ? 'Arabic headers if the text is in Arabic, or clean standard names' : 'English headers'}.
+Analyze the text and:
+1. Detect the structure of the information into consistent columns and records.
+2. Clean unnecessary formatting, Markdown artifacts (**bold**, ---, unnecessary pipes |).
+3. Infer headers with natural names in ${language === 'ar' ? 'Arabic' : 'English'}.
+4. Infer column types among: Text, Number, Date, Currency, Percentage, Category, Location, ID.
+5. Determine confidence (isConfident = true if structure is obvious, false if ambiguous or guessing was needed).
 
 Return ONLY valid JSON matching this schema:
 {
   "tableName": "string",
   "columns": ["col1", "col2", ...],
+  "columnTypes": { "col1": "Text|Number|Date|Currency|Percentage|Category|Location|ID", ... },
   "rows": [
     { "col1": value1, "col2": value2, ... }
   ],
+  "isConfident": boolean,
+  "confidenceScore": number,
+  "confidenceReason": "string explanation in ${language === 'ar' ? 'Arabic' : 'English'}",
   "cleaningNotes": ["note1", "note2"]
 }
 
 Raw text:
 """
-${text.slice(0, 10000)}
+${text.slice(0, 15000)}
 """`;
 
     const response = await ai.models.generateContent({
@@ -137,6 +143,13 @@ app.post('/api/ai/insights', async (req, res) => {
 Analyze this data summary and provide 3 to 5 simple, high-value insights under the section "What should I know?" ("إيه المهم اللي لازم تعرفه؟").
 
 Language: ${language === 'ar' ? 'Warm, natural Egyptian/Standard Arabic. No complex statistical jargon. Friendly and practical.' : 'Warm, clear English. No complex statistics jargon.'}
+
+CRITICAL RULES (Anti-Blind-Aggregation):
+- NEVER sum IDs, Ages, Timestamps, or Ratings!
+- Ratings (1-5): Discuss average rating, satisfaction percentage (4-5 stars), or low ratings.
+- Ages: Discuss average age or age groups. Never sum ages.
+- Identifiers: Discuss unique counts.
+- Timestamps: Discuss timeline frequency or trends over time.
 
 Requirements:
 - Exactly 3 to 5 bullet points.

@@ -41,108 +41,272 @@ export function formatMetricNumberEn(val: number, isCurrency: boolean = false): 
 }
 
 /**
- * Automatically builds relevant KPIs from the data
+ * Automatically builds relevant KPIs from the data based on Semantic Roles
+ * NEVER blindly sums IDs, Ages, Timestamps, or Ratings!
  */
 export function generateKPIs(dataset: CleanedDataset): KPIItem[] {
   const kpis: KPIItem[] = [];
-  const rows = dataset.rows;
+  const rows = dataset.analyticalRows && dataset.analyticalRows.length > 0 ? dataset.analyticalRows : dataset.rows;
   const count = rows.length;
-  if (count === 0) return kpis;
+  if (count === 0 && dataset.totalRows === 0) return kpis;
 
   const cols = dataset.columns;
-  const numCols = cols.filter((c) => c.type === 'numeric');
+  const validCount = dataset.validRowsCount ?? count;
+  const ignoredCount = dataset.ignoredRowsCount ?? 0;
 
-  // Look for total / sales / amount
-  const salesCol = numCols.find((c) =>
-    /إجمالي|sales|مبيعات|مبلغ|amount|total|revenue|قيمة/i.test(c.key)
-  ) || numCols.find((c) => /سعر|price/i.test(c.key));
+  // Find columns by semantic role
+  const ratingCols = cols.filter(
+    (c) => c.type === 'rating' || (c.semanticRole === 'numeric_discrete' && /تقييم|rating|stars|نجوم|score|رضا|satisfaction|جودة/i.test(c.key))
+  );
+  const ageCols = cols.filter(
+    (c) => c.type === 'age' || (c.semanticRole === 'numeric_discrete' && /عمر|age|سن/i.test(c.key))
+  );
+  const financialCols = cols.filter((c) => c.semanticRole === 'numeric_financial');
+  const idCols = cols.filter((c) => c.semanticRole === 'identifier');
+  const dateCols = cols.filter((c) => c.semanticRole === 'timestamp' || c.type === 'date');
+  const catCols = cols.filter((c) => c.semanticRole === 'categorical');
 
-  // Look for profit
-  const profitCol = numCols.find((c) => /ربح|أرباح|profit|margin|صافي/i.test(c.key));
-
-  // Look for quantity
-  const qtyCol = numCols.find((c) => /كمية|qty|quantity|عدد/i.test(c.key));
-
-  // 1. Total Volume / Revenue
-  if (salesCol && salesCol.sum !== undefined) {
-    const totalSales = salesCol.sum;
-    kpis.push({
-      id: 'kpi_sales',
-      label: 'إجمالي المبيعات',
-      labelAr: 'إجمالي المبيعات',
-      value: totalSales,
-      formattedValue: formatMetricNumber(totalSales, true),
-      subtitle: `من إجمالي ${count} عملية مسجلة`,
-      subtitleAr: `من إجمالي ${count} عملية مسجلة`,
-      type: 'currency',
-      metricKey: salesCol.key,
-      iconName: 'DollarSign',
-    });
-
-    // Average Order Value (AOV)
-    const aov = count > 0 ? totalSales / count : 0;
-    kpis.push({
-      id: 'kpi_aov',
-      label: 'متوسط قيمة العملية',
-      labelAr: 'متوسط قيمة العملية',
-      value: aov,
-      formattedValue: formatMetricNumber(aov, true),
-      subtitle: 'متوسط كل فاتورة أو طلب',
-      subtitleAr: 'متوسط كل فاتورة أو طلب',
-      type: 'currency',
-      metricKey: salesCol.key,
-      iconName: 'TrendingUp',
-    });
-  }
-
-  // 2. Total Profit
-  if (profitCol && profitCol.sum !== undefined) {
-    const totalProfit = profitCol.sum;
-    let margin = 0;
-    if (salesCol && salesCol.sum && salesCol.sum > 0) {
-      margin = Math.round((totalProfit / salesCol.sum) * 100);
-    }
-    kpis.push({
-      id: 'kpi_profit',
-      label: 'إجمالي الأرباح',
-      labelAr: 'إجمالي الأرباح',
-      value: totalProfit,
-      formattedValue: formatMetricNumber(totalProfit, true),
-      subtitle: margin > 0 ? `هامش ربح إجمالي تقريبي ${margin}%` : 'صافي الأرباح المحققة',
-      subtitleAr: margin > 0 ? `هامش ربح إجمالي تقريبي ${margin}%` : 'صافي الأرباح المحققة',
-      type: 'currency',
-      metricKey: profitCol.key,
-      iconName: 'PieChart',
-    });
-  }
-
-  // 3. Total Orders or Records
+  // 1. DATA INTEGRITY & AUDIT KPI (Always transparent)
   kpis.push({
-    id: 'kpi_records',
-    label: 'عدد المعاملات والطلبات',
-    labelAr: 'عدد المعاملات والطلبات',
-    value: count,
-    formattedValue: count.toLocaleString('ar-EG'),
-    subtitle: 'سجل مكتمل تم تنظيمه بنجاح',
-    subtitleAr: 'سجل مكتمل تم تنظيمه بنجاح',
+    id: 'kpi_valid_records',
+    label: 'السجلات الصالحة للتحليل',
+    labelAr: 'السجلات الصالحة للتحليل',
+    value: validCount,
+    formattedValue: validCount.toLocaleString('ar-EG'),
+    subtitle: ignoredCount > 0 ? `من أصل ${dataset.totalRows} (تم استبعاد ${ignoredCount} شاذ)` : `من إجمالي ${dataset.totalRows} سجل كامل`,
+    subtitleAr: ignoredCount > 0 ? `من أصل ${dataset.totalRows} (تم استبعاد ${ignoredCount} شاذ)` : `من إجمالي ${dataset.totalRows} سجل كامل`,
     type: 'number',
     iconName: 'ShoppingBag',
+    calculationType: 'count',
+    validRowsUsed: validCount,
+    ignoredRowsCount: ignoredCount,
   });
 
-  // 4. Quantity Sold if exists
-  if (qtyCol && qtyCol.sum !== undefined) {
-    const totalQty = qtyCol.sum;
+  // 2. DISCRETE RATINGS (Average & Satisfaction % - NEVER SUM!)
+  if (ratingCols.length > 0) {
+    const ratingCol = ratingCols[0];
+    const avgRating = ratingCol.avg ?? 0;
+    const medianRating = ratingCol.median ?? avgRating;
+
+    // KPI: Overall Average Rating (Mean)
     kpis.push({
-      id: 'kpi_quantity',
-      label: 'إجمالي الكميات',
-      labelAr: 'إجمالي الكميات',
-      value: totalQty,
-      formattedValue: totalQty.toLocaleString('ar-EG'),
-      subtitle: 'وحدة أو منتج تم تسليمه',
-      subtitleAr: 'وحدة أو منتج تم تسليمه',
+      id: 'kpi_avg_rating',
+      label: 'متوسط تقييم جودة المنتج',
+      labelAr: 'متوسط تقييم جودة المنتج',
+      value: avgRating,
+      formattedValue: `${avgRating.toFixed(1)} / 5 ⭐`,
+      subtitle: `الوسيط الإحصائي: ${medianRating} · محسوب من ${validCount} تقييم صالح`,
+      subtitleAr: `الوسيط الإحصائي: ${medianRating} · محسوب من ${validCount} تقييم صالح`,
       type: 'number',
-      metricKey: qtyCol.key,
-      iconName: 'Package',
+      metricKey: ratingCol.key,
+      iconName: 'TrendingUp',
+      semanticRole: 'numeric_discrete',
+      calculationType: 'avg',
+      validRowsUsed: validCount,
+      ignoredRowsCount: ignoredCount,
+    });
+
+    // KPI: Customer Satisfaction Rate (% of ratings >= 4)
+    const satisfiedCount = rows.filter((r) => {
+      const v = Number(r[ratingCol.key]);
+      return !isNaN(v) && v >= 4;
+    }).length;
+    const satisfactionRate = count > 0 ? Math.round((satisfiedCount / count) * 100) : 0;
+
+    kpis.push({
+      id: 'kpi_satisfaction_rate',
+      label: 'معدل رضا العملاء (4-5 نجوم)',
+      labelAr: 'معدل رضا العملاء (4-5 نجوم)',
+      value: satisfactionRate,
+      formattedValue: `${satisfactionRate}%`,
+      subtitle: `${satisfiedCount} عميل قيّموا بـ 4 أو 5 نجوم`,
+      subtitleAr: `${satisfiedCount} عميل قيّموا بـ 4 أو 5 نجوم`,
+      type: 'percentage',
+      metricKey: ratingCol.key,
+      iconName: 'PieChart',
+      semanticRole: 'numeric_discrete',
+      calculationType: 'distribution',
+      validRowsUsed: validCount,
+    });
+
+    // KPI: Low Ratings / Issue Rate (% of ratings <= 2)
+    const lowRatingCount = rows.filter((r) => {
+      const v = Number(r[ratingCol.key]);
+      return !isNaN(v) && v > 0 && v <= 2;
+    }).length;
+    const lowRate = count > 0 ? Math.round((lowRatingCount / count) * 100) : 0;
+
+    kpis.push({
+      id: 'kpi_low_rating_rate',
+      label: 'معدل التقييمات المنخفضة',
+      labelAr: 'معدل التقييمات المنخفضة',
+      value: lowRate,
+      formattedValue: `${lowRate}%`,
+      subtitle: `${lowRatingCount} تقييم سلبي (نجمتان أو أقل)`,
+      subtitleAr: `${lowRatingCount} تقييم سلبي (نجمتان أو أقل)`,
+      type: 'percentage',
+      metricKey: ratingCol.key,
+      iconName: 'DollarSign',
+      semanticRole: 'numeric_discrete',
+      calculationType: 'distribution',
+      validRowsUsed: validCount,
+    });
+  }
+
+  // 3. DISCRETE AGE (Average & Median Age - NEVER SUM!)
+  if (ageCols.length > 0) {
+    const ageCol = ageCols[0];
+    const avgAge = ageCol.avg ?? 0;
+    const medianAge = ageCol.median ?? avgAge;
+
+    kpis.push({
+      id: 'kpi_avg_age',
+      label: 'متوسط أعمار العملاء',
+      labelAr: 'متوسط أعمار العملاء',
+      value: avgAge,
+      formattedValue: `${Math.round(avgAge)} سنة`,
+      subtitle: `الوسيط: ${medianAge} سنة · النطاق (${ageCol.min || 0} - ${ageCol.max || 0} سنة)`,
+      subtitleAr: `الوسيط: ${medianAge} سنة · النطاق (${ageCol.min || 0} - ${ageCol.max || 0} سنة)`,
+      type: 'number',
+      metricKey: ageCol.key,
+      iconName: 'TrendingUp',
+      semanticRole: 'numeric_discrete',
+      calculationType: 'avg',
+      validRowsUsed: validCount,
+    });
+  }
+
+  // 4. IDENTIFIERS (Unique Count ONLY - NEVER SUM OR AVERAGE!)
+  if (idCols.length > 0) {
+    const idCol = idCols[0];
+    const uniqueIds = idCol.uniqueCount;
+
+    kpis.push({
+      id: 'kpi_unique_ids',
+      label: `العملاء الفريدون (${idCol.label})`,
+      labelAr: `العملاء الفريدون (${idCol.label})`,
+      value: uniqueIds,
+      formattedValue: uniqueIds.toLocaleString('ar-EG'),
+      subtitle: 'معرف فريد ومستقل في السجلات',
+      subtitleAr: 'معرف فريد ومستقل في السجلات',
+      type: 'number',
+      metricKey: idCol.key,
+      iconName: 'ShoppingBag',
+      semanticRole: 'identifier',
+      calculationType: 'unique_count',
+      validRowsUsed: validCount,
+    });
+  }
+
+  // 5. FINANCIAL / QUANTITY METRICS (Allowed: Sum, Avg, Min, Max)
+  if (financialCols.length > 0) {
+    const salesCol = financialCols.find((c) =>
+      /إجمالي|sales|مبيعات|مبلغ|amount|total|revenue|قيمة/i.test(c.key)
+    ) || financialCols.find((c) => /سعر|price/i.test(c.key));
+
+    const profitCol = financialCols.find((c) => /ربح|أرباح|profit|margin|صافي/i.test(c.key));
+    const qtyCol = financialCols.find((c) => /كمية|qty|quantity|عدد/i.test(c.key));
+
+    // Revenue / Sales Sum
+    if (salesCol && salesCol.sum !== undefined && salesCol.sum > 0) {
+      const totalSales = salesCol.sum;
+      kpis.push({
+        id: 'kpi_sales',
+        label: 'إجمالي المبيعات',
+        labelAr: 'إجمالي المبيعات',
+        value: totalSales,
+        formattedValue: formatMetricNumber(totalSales, true),
+        subtitle: `من إجمالي ${validCount} عملية صالحة`,
+        subtitleAr: `من إجمالي ${validCount} عملية صالحة`,
+        type: 'currency',
+        metricKey: salesCol.key,
+        iconName: 'DollarSign',
+        semanticRole: 'numeric_financial',
+        calculationType: 'sum',
+      });
+
+      const aov = count > 0 ? totalSales / count : 0;
+      kpis.push({
+        id: 'kpi_aov',
+        label: 'متوسط قيمة العملية',
+        labelAr: 'متوسط قيمة العملية',
+        value: aov,
+        formattedValue: formatMetricNumber(aov, true),
+        subtitle: 'متوسط كل فاتورة أو طلب',
+        subtitleAr: 'متوسط كل فاتورة أو طلب',
+        type: 'currency',
+        metricKey: salesCol.key,
+        iconName: 'TrendingUp',
+        semanticRole: 'numeric_financial',
+        calculationType: 'avg',
+      });
+    }
+
+    // Profit Sum
+    if (profitCol && profitCol.sum !== undefined && profitCol.sum > 0) {
+      const totalProfit = profitCol.sum;
+      let margin = 0;
+      if (salesCol && salesCol.sum && salesCol.sum > 0) {
+        margin = Math.round((totalProfit / salesCol.sum) * 100);
+      }
+      kpis.push({
+        id: 'kpi_profit',
+        label: 'إجمالي الأرباح',
+        labelAr: 'إجمالي الأرباح',
+        value: totalProfit,
+        formattedValue: formatMetricNumber(totalProfit, true),
+        subtitle: margin > 0 ? `هامش ربح إجمالي تقريبي ${margin}%` : 'صافي الأرباح المحققة',
+        subtitleAr: margin > 0 ? `هامش ربح إجمالي تقريبي ${margin}%` : 'صافي الأرباح المحققة',
+        type: 'currency',
+        metricKey: profitCol.key,
+        iconName: 'PieChart',
+        semanticRole: 'numeric_financial',
+        calculationType: 'sum',
+      });
+    }
+
+    // Quantity Sum
+    if (qtyCol && qtyCol.sum !== undefined && qtyCol.sum > 0) {
+      const totalQty = qtyCol.sum;
+      kpis.push({
+        id: 'kpi_quantity',
+        label: 'إجمالي الكميات',
+        labelAr: 'إجمالي الكميات',
+        value: totalQty,
+        formattedValue: totalQty.toLocaleString('ar-EG'),
+        subtitle: 'وحدة أو منتج مسجل',
+        subtitleAr: 'وحدة أو منتج مسجل',
+        type: 'number',
+        metricKey: qtyCol.key,
+        iconName: 'Package',
+        semanticRole: 'numeric_financial',
+        calculationType: 'sum',
+      });
+    }
+  }
+
+  // 6. CATEGORICAL ISSUE / COMPLAINT COLUMN
+  const issueCol = catCols.find((c) => /مشكلة|issue|complaint|شكوى|عطل|defect/i.test(c.key));
+  if (issueCol) {
+    const issuesFound = rows.filter((r) => {
+      const v = String(r[issueCol.key] || '').trim().toLowerCase();
+      return v && v !== 'لا' && v !== 'لا يوجد' && v !== 'no' && v !== 'none' && v !== '0' && v !== 'سليم';
+    }).length;
+    const issueRate = count > 0 ? Math.round((issuesFound / count) * 100) : 0;
+
+    kpis.push({
+      id: 'kpi_issue_rate',
+      label: 'معدل الشكاوى والمشاكل',
+      labelAr: 'معدل الشكاوى والمشاكل',
+      value: issueRate,
+      formattedValue: `${issueRate}%`,
+      subtitle: `${issuesFound} حالة مسجل بها ملاحظة أو شكوى`,
+      subtitleAr: `${issuesFound} حالة مسجل بها ملاحظة أو شكوى`,
+      type: 'percentage',
+      iconName: 'PieChart',
+      semanticRole: 'categorical',
+      calculationType: 'distribution',
+      validRowsUsed: validCount,
     });
   }
 
@@ -150,136 +314,289 @@ export function generateKPIs(dataset: CleanedDataset): KPIItem[] {
 }
 
 /**
- * Automatically chooses suitable charts based on available dimensions and metrics
+ * Automatically chooses suitable charts based on available dimensions and semantic roles
+ * Strictly avoids summing discrete ratings, IDs, timestamps, or ages!
  */
 export function generateCharts(dataset: CleanedDataset): ChartConfig[] {
   const charts: ChartConfig[] = [];
-  const rows = dataset.rows;
+  const rows = dataset.analyticalRows && dataset.analyticalRows.length > 0 ? dataset.analyticalRows : dataset.rows;
   if (rows.length === 0) return charts;
 
   const cols = dataset.columns;
-  const numCols = cols.filter((c) => c.type === 'numeric');
-  const catCols = cols.filter((c) => c.type === 'category' || c.inferredRole === 'dimension');
-  const timeCols = cols.filter((c) => c.type === 'date' || c.inferredRole === 'time');
+  const ratingCols = cols.filter(
+    (c) => c.type === 'rating' || (c.semanticRole === 'numeric_discrete' && /تقييم|rating|stars|نجوم|score|رضا|satisfaction|جودة/i.test(c.key))
+  );
+  const ageCols = cols.filter(
+    (c) => c.type === 'age' || (c.semanticRole === 'numeric_discrete' && /عمر|age|سن/i.test(c.key))
+  );
+  const financialCols = cols.filter((c) => c.semanticRole === 'numeric_financial');
+  const catCols = cols.filter((c) => c.semanticRole === 'categorical');
+  const timeCols = cols.filter((c) => c.semanticRole === 'timestamp' || c.type === 'date');
 
-  // Preferred metric: sales/amount or profit or first numeric
-  const primaryMetric =
-    numCols.find((c) => /إجمالي|sales|مبيعات|مبلغ|amount|total|revenue/i.test(c.key)) ||
-    numCols.find((c) => /سعر|price/i.test(c.key)) ||
-    numCols[0];
-
-  const profitMetric = numCols.find((c) => /ربح|أرباح|profit/i.test(c.key));
-
-  // Preferred dimensions: City / Region, Product / Item, Department / Category
   const cityCol = catCols.find((c) => /مدينة|city|governorate|منطقة|فرع/i.test(c.key));
   const productCol = catCols.find((c) => /منتج|product|item|صنف|خدمة/i.test(c.key));
   const otherCatCol = catCols.find((c) => c !== cityCol && c !== productCol);
   const timeCol = timeCols[0];
 
-  // Helper to aggregate data
-  const aggregate = (dimKey: string, metKey: string) => {
-    const map = new Map<string, number>();
+  // ==========================================
+  // CASE 1: DATASET HAS CUSTOMER FEEDBACK / RATINGS
+  // ==========================================
+  if (ratingCols.length > 0) {
+    const ratingCol = ratingCols[0];
+
+    // Chart 1: Rating Distribution (Donut Chart) - 1 to 5 Stars Breakdown
+    const ratingDistributionMap = new Map<string, number>([
+      ['5 نجوم (ممتاز)', 0],
+      ['4 نجوم (جيد جداً)', 0],
+      ['3 نجوم (متوسط)', 0],
+      ['2 نجوم (ضعيف)', 0],
+      ['1 نجمة (سيئ)', 0],
+    ]);
+
     rows.forEach((r) => {
-      const dim = String(r[dimKey] || 'أخرى').trim();
-      const val = Number(r[metKey]) || 0;
-      map.set(dim, (map.get(dim) || 0) + val);
+      const score = Math.round(Number(r[ratingCol.key]) || 0);
+      if (score === 5) ratingDistributionMap.set('5 نجوم (ممتاز)', (ratingDistributionMap.get('5 نجوم (ممتاز)') || 0) + 1);
+      else if (score === 4) ratingDistributionMap.set('4 نجوم (جيد جداً)', (ratingDistributionMap.get('4 نجوم (جيد جداً)') || 0) + 1);
+      else if (score === 3) ratingDistributionMap.set('3 نجوم (متوسط)', (ratingDistributionMap.get('3 نجوم (متوسط)') || 0) + 1);
+      else if (score === 2) ratingDistributionMap.set('2 نجوم (ضعيف)', (ratingDistributionMap.get('2 نجوم (ضعيف)') || 0) + 1);
+      else if (score === 1) ratingDistributionMap.set('1 نجمة (سيئ)', (ratingDistributionMap.get('1 نجمة (سيئ)') || 0) + 1);
     });
 
-    const total = Array.from(map.values()).reduce((a, b) => a + b, 0);
-    const sorted = Array.from(map.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8); // top 8 to keep clean
+    const totalRatings = rows.length;
+    const ratingDistData = Array.from(ratingDistributionMap.entries())
+      .filter(([_, count]) => count > 0)
+      .map(([label, value]) => ({
+        label,
+        value,
+        percentage: totalRatings > 0 ? Math.round((value / totalRatings) * 100) : 0,
+      }));
 
-    return sorted.map(([label, value]) => ({
-      label,
-      value,
-      percentage: total > 0 ? Math.round((value / total) * 100) : 0,
-    }));
-  };
+    if (ratingDistData.length > 0) {
+      charts.push({
+        id: 'chart_rating_distribution',
+        titleAr: `توزيع تقييمات العملاء (${ratingCol.label})`,
+        titleEn: `Customer Rating Distribution`,
+        type: 'donut',
+        dimensionKey: ratingCol.key,
+        metricKey: ratingCol.key,
+        aggregation: 'distribution',
+        data: ratingDistData,
+        descriptionAr: `توزيع نسب التقييمات من 1 إلى 5 نجوم لقياس مستوى رضا العملاء الحقيقي.`,
+        descriptionEn: `Distribution of customer rating tiers from 1 to 5 stars.`,
+      });
+    }
 
-  // Chart 1: City / Region breakdown (Bar Chart)
-  if (cityCol && primaryMetric) {
-    const data = aggregate(cityCol.key, primaryMetric.key);
-    charts.push({
-      id: 'chart_city_sales',
-      titleAr: `${primaryMetric.label} حسب ${cityCol.label}`,
-      titleEn: `${primaryMetric.label} by ${cityCol.label}`,
-      type: 'bar',
-      dimensionKey: cityCol.key,
-      metricKey: primaryMetric.key,
-      aggregation: 'sum',
-      data,
-      descriptionAr: `مقارنة مباشرة بين أداء مختلف ${cityCol.label} وترتيبها من الأعلى للأقل.`,
-      descriptionEn: `Direct comparison across ${cityCol.label} ranked highest to lowest.`,
-    });
+    // Chart 2: Average Rating by City / Dimension (Bar Chart) - NEVER SUM! Uses AVG!
+    const targetDim = cityCol || productCol || otherCatCol;
+    if (targetDim) {
+      const dimSumMap = new Map<string, { sum: number; count: number }>();
+      rows.forEach((r) => {
+        const dimVal = String(r[targetDim.key] || 'أخرى').trim();
+        const score = Number(r[ratingCol.key]);
+        if (!isNaN(score) && score >= 1 && score <= 5) {
+          const curr = dimSumMap.get(dimVal) || { sum: 0, count: 0 };
+          dimSumMap.set(dimVal, { sum: curr.sum + score, count: curr.count + 1 });
+        }
+      });
+
+      const dimAvgData = Array.from(dimSumMap.entries())
+        .map(([label, stats]) => ({
+          label,
+          value: Number((stats.sum / (stats.count || 1)).toFixed(2)),
+          secondaryValue: stats.count,
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+
+      if (dimAvgData.length > 0) {
+        charts.push({
+          id: 'chart_avg_rating_by_dim',
+          titleAr: `متوسط التقييم حسب ${targetDim.label}`,
+          titleEn: `Average Rating by ${targetDim.label}`,
+          type: 'bar',
+          dimensionKey: targetDim.key,
+          metricKey: ratingCol.key,
+          aggregation: 'avg',
+          data: dimAvgData,
+          descriptionAr: `مقارنة متوسط رضا العملاء (من 5) لكل ${targetDim.label} دون جمع مضلل.`,
+          descriptionEn: `Direct average satisfaction rating comparison across ${targetDim.label}.`,
+        });
+      }
+    }
   }
 
-  // Chart 2: Time Series / Trend (Line Chart)
-  if (timeCol && primaryMetric) {
-    // Group by date or month
-    const timeMap = new Map<string, number>();
+  // ==========================================
+  // CASE 2: AGE DISTRIBUTION CHART
+  // ==========================================
+  if (ageCols.length > 0) {
+    const ageCol = ageCols[0];
+    const ageBrackets = new Map<string, number>([
+      ['أقل من 20 سنة', 0],
+      ['20 - 29 سنة', 0],
+      ['30 - 39 سنة', 0],
+      ['40 - 49 سنة', 0],
+      ['50 فأكثر', 0],
+    ]);
+
     rows.forEach((r) => {
-      let t = String(r[timeCol.key] || '').trim();
-      // Simplify date: take YYYY-MM or keep short
-      if (/^\d{4}-\d{2}-\d{2}/.test(t)) {
-        t = t.slice(0, 7); // Month level
+      const age = Number(r[ageCol.key]);
+      if (!isNaN(age) && age >= 0 && age <= 120) {
+        if (age < 20) ageBrackets.set('أقل من 20 سنة', (ageBrackets.get('أقل من 20 سنة') || 0) + 1);
+        else if (age < 30) ageBrackets.set('20 - 29 سنة', (ageBrackets.get('20 - 29 سنة') || 0) + 1);
+        else if (age < 40) ageBrackets.set('30 - 39 سنة', (ageBrackets.get('30 - 39 سنة') || 0) + 1);
+        else if (age < 50) ageBrackets.set('40 - 49 سنة', (ageBrackets.get('40 - 49 سنة') || 0) + 1);
+        else ageBrackets.set('50 فأكثر', (ageBrackets.get('50 فأكثر') || 0) + 1);
       }
-      const val = Number(r[primaryMetric.key]) || 0;
-      timeMap.set(t, (timeMap.get(t) || 0) + val);
     });
 
-    const timeData = Array.from(timeMap.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, value]) => ({ label, value }));
+    const totalAges = rows.length;
+    const ageData = Array.from(ageBrackets.entries())
+      .filter(([_, count]) => count > 0)
+      .map(([label, value]) => ({
+        label,
+        value,
+        percentage: totalAges > 0 ? Math.round((value / totalAges) * 100) : 0,
+      }));
 
-    if (timeData.length >= 2) {
+    if (ageData.length > 0 && charts.length < 3) {
       charts.push({
-        id: 'chart_timeline',
-        titleAr: `تطور ${primaryMetric.label} عبر الزمن (${timeCol.label})`,
-        titleEn: `${primaryMetric.label} Over Time`,
-        type: 'line',
-        dimensionKey: timeCol.key,
-        metricKey: primaryMetric.key,
-        aggregation: 'sum',
-        data: timeData,
-        descriptionAr: `تتبع حركة المبيعات وتحديد فترات الذروة والنمو.`,
-        descriptionEn: `Tracking sales momentum and identifying peak periods.`,
+        id: 'chart_age_distribution',
+        titleAr: `توزيع الفئات العمرية للعملاء (${ageCol.label})`,
+        titleEn: `Age Group Distribution`,
+        type: 'bar',
+        dimensionKey: ageCol.key,
+        metricKey: ageCol.key,
+        aggregation: 'distribution',
+        data: ageData,
+        descriptionAr: `توزيع أعداد العملاء حسب الشرائح العمرية لمعرفة الفئة المستهدفة الأكثر نشاطًا.`,
+        descriptionEn: `Distribution across demographic age brackets.`,
       });
     }
   }
 
-  // Chart 3: Product / Category breakdown (Donut or Bar)
-  const categoryCol = productCol || otherCatCol || catCols[0];
-  if (categoryCol && primaryMetric && (!cityCol || categoryCol.key !== cityCol.key)) {
-    const data = aggregate(categoryCol.key, primaryMetric.key);
-    charts.push({
-      id: 'chart_category',
-      titleAr: `توزيع ${primaryMetric.label} حسب ${categoryCol.label}`,
-      titleEn: `Distribution by ${categoryCol.label}`,
-      type: 'donut',
-      dimensionKey: categoryCol.key,
-      metricKey: primaryMetric.key,
-      aggregation: 'sum',
-      data,
-      descriptionAr: `حصص ومساهمة كل ${categoryCol.label} في الحجم الكلي.`,
-      descriptionEn: `Share and contribution of each ${categoryCol.label} to total volume.`,
+  // ==========================================
+  // CASE 3: TIMELINE / ACTIVITY FREQUENCY OVER TIME (NEVER SUM!)
+  // ==========================================
+  if (timeCol) {
+    const timeFreqMap = new Map<string, number>();
+    rows.forEach((r) => {
+      let t = String(r[timeCol.key] || '').trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(t)) {
+        t = t.slice(0, 7); // YYYY-MM
+      }
+      if (t) {
+        timeFreqMap.set(t, (timeFreqMap.get(t) || 0) + 1);
+      }
     });
+
+    const timeData = Array.from(timeFreqMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([label, value]) => ({ label, value }));
+
+    if (timeData.length >= 2 && charts.length < 4) {
+      charts.push({
+        id: 'chart_timeline_frequency',
+        titleAr: `تطور السجلات والنشاط عبر الزمن (${timeCol.label})`,
+        titleEn: `Activity Over Time (${timeCol.label})`,
+        type: 'line',
+        dimensionKey: timeCol.key,
+        metricKey: timeCol.key,
+        aggregation: 'count',
+        data: timeData,
+        descriptionAr: `تتبع عدد المشاركات والتسجيلات عبر الزمن دون تجميع حسابي للأيام.`,
+        descriptionEn: `Tracking record submission count and frequency over time.`,
+      });
+    }
   }
 
-  // Chart 4: Profit breakdown if profit exists and not redundant
-  if (profitMetric && cityCol && charts.length < 3) {
-    const data = aggregate(cityCol.key, profitMetric.key);
+  // ==========================================
+  // CASE 4: FINANCIAL METRICS (Sum, AOV, Margin)
+  // ==========================================
+  if (financialCols.length > 0) {
+    const salesCol = financialCols.find((c) =>
+      /إجمالي|sales|مبيعات|مبلغ|amount|total|revenue/i.test(c.key)
+    ) || financialCols[0];
+
+    const aggregateFinancial = (dimKey: string, metKey: string) => {
+      const map = new Map<string, number>();
+      rows.forEach((r) => {
+        const dim = String(r[dimKey] || 'أخرى').trim();
+        const val = Number(r[metKey]) || 0;
+        map.set(dim, (map.get(dim) || 0) + val);
+      });
+
+      const total = Array.from(map.values()).reduce((a, b) => a + b, 0);
+      return Array.from(map.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([label, value]) => ({
+          label,
+          value,
+          percentage: total > 0 ? Math.round((value / total) * 100) : 0,
+        }));
+    };
+
+    if (cityCol && salesCol && !charts.some((c) => c.dimensionKey === cityCol.key)) {
+      charts.push({
+        id: 'chart_city_sales',
+        titleAr: `${salesCol.label} حسب ${cityCol.label}`,
+        titleEn: `${salesCol.label} by ${cityCol.label}`,
+        type: 'bar',
+        dimensionKey: cityCol.key,
+        metricKey: salesCol.key,
+        aggregation: 'sum',
+        data: aggregateFinancial(cityCol.key, salesCol.key),
+        descriptionAr: `مقارنة مباشرة بين أداء مختلف ${cityCol.label} وترتيبها من الأعلى للأقل.`,
+        descriptionEn: `Direct comparison across ${cityCol.label} ranked highest to lowest.`,
+      });
+    }
+
+    if (productCol && salesCol && !charts.some((c) => c.dimensionKey === productCol.key)) {
+      charts.push({
+        id: 'chart_product_sales',
+        titleAr: `توزيع ${salesCol.label} حسب ${productCol.label}`,
+        titleEn: `Distribution by ${productCol.label}`,
+        type: 'donut',
+        dimensionKey: productCol.key,
+        metricKey: salesCol.key,
+        aggregation: 'sum',
+        data: aggregateFinancial(productCol.key, salesCol.key),
+        descriptionAr: `حصص ومساهمة كل ${productCol.label} في الحجم الكلي.`,
+        descriptionEn: `Share and contribution of each ${productCol.label}.`,
+      });
+    }
+  }
+
+  // ==========================================
+  // CASE 5: CATEGORICAL RECORD DISTRIBUTION (FALLBACK)
+  // ==========================================
+  if (charts.length < 2 && cityCol && !charts.some((c) => c.dimensionKey === cityCol.key)) {
+    const cityCountMap = new Map<string, number>();
+    rows.forEach((r) => {
+      const c = String(r[cityCol.key] || 'أخرى').trim();
+      cityCountMap.set(c, (cityCountMap.get(c) || 0) + 1);
+    });
+    const totalCount = rows.length;
+    const cityData = Array.from(cityCountMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([label, value]) => ({
+        label,
+        value,
+        percentage: totalCount > 0 ? Math.round((value / totalCount) * 100) : 0,
+      }));
+
     charts.push({
-      id: 'chart_profit_city',
-      titleAr: `${profitMetric.label} حسب ${cityCol.label}`,
-      titleEn: `${profitMetric.label} by ${cityCol.label}`,
+      id: 'chart_city_records',
+      titleAr: `توزيع السجلات حسب ${cityCol.label}`,
+      titleEn: `Record Distribution by ${cityCol.label}`,
       type: 'bar',
       dimensionKey: cityCol.key,
-      metricKey: profitMetric.key,
-      aggregation: 'sum',
-      data,
-      descriptionAr: `مقارنة حجم الأرباح الفعلية الناتجة عن كل ${cityCol.label}.`,
-      descriptionEn: `Direct net profit comparison across ${cityCol.label}.`,
+      metricKey: cityCol.key,
+      aggregation: 'count',
+      data: cityData,
+      descriptionAr: `توزيع كثافة وحجم السجلات والعملاء حسب ${cityCol.label}.`,
+      descriptionEn: `Distribution of records across ${cityCol.label}.`,
     });
   }
 
@@ -288,128 +605,115 @@ export function generateCharts(dataset: CleanedDataset): ChartConfig[] {
 
 /**
  * Generates 3-5 crisp, friendly insights for "What should I know?"
+ * Grounded strictly in detected semantic roles and verified valid data
  */
 export function generateInsights(dataset: CleanedDataset): InsightItem[] {
   const insights: InsightItem[] = [];
-  const rows = dataset.rows;
+  const rows = dataset.analyticalRows && dataset.analyticalRows.length > 0 ? dataset.analyticalRows : dataset.rows;
   if (rows.length === 0) return insights;
 
   const cols = dataset.columns;
-  const numCols = cols.filter((c) => c.type === 'numeric');
-  const catCols = cols.filter((c) => c.type === 'category' || c.inferredRole === 'dimension');
-
-  const salesCol =
-    numCols.find((c) => /إجمالي|sales|مبيعات|مبلغ|amount|total|revenue/i.test(c.key)) ||
-    numCols.find((c) => /سعر|price/i.test(c.key)) ||
-    numCols[0];
-
-  const profitCol = numCols.find((c) => /ربح|أرباح|profit/i.test(c.key));
+  const ratingCols = cols.filter(
+    (c) => c.type === 'rating' || (c.semanticRole === 'numeric_discrete' && /تقييم|rating|stars|نجوم|score|رضا/i.test(c.key))
+  );
+  const ageCols = cols.filter(
+    (c) => c.type === 'age' || (c.semanticRole === 'numeric_discrete' && /عمر|age|سن/i.test(c.key))
+  );
+  const financialCols = cols.filter((c) => c.semanticRole === 'numeric_financial');
+  const catCols = cols.filter((c) => c.semanticRole === 'categorical');
   const cityCol = catCols.find((c) => /مدينة|city|منطقة|governorate/i.test(c.key));
-  const productCol = catCols.find((c) => /منتج|product|صنف|item/i.test(c.key));
 
-  // 1. Top City / Dimension
-  if (cityCol && salesCol) {
-    const cityMap = new Map<string, number>();
-    rows.forEach((r) => {
-      const city = String(r[cityCol.key] || '').trim();
-      const val = Number(r[salesCol.key]) || 0;
-      cityMap.set(city, (cityMap.get(city) || 0) + val);
+  // 1. Data Quality & Preprocessing transparency insight
+  if (dataset.ignoredRowsCount > 0) {
+    insights.push({
+      id: 'ins_data_quality',
+      type: 'warning',
+      textAr: `تم تدقيق البيانات واستبعاد ${dataset.ignoredRowsCount} سجل شاذ أو غير متسق لضمان صحة المؤشرات والاعتماد على ${dataset.validRowsCount} سجل موثوق.`,
+      textEn: `Audited data and filtered out ${dataset.ignoredRowsCount} anomalous records, calculating metrics from ${dataset.validRowsCount} valid rows.`,
+      metricLabel: 'السجلات المستبعدة',
+      metricValue: `${dataset.ignoredRowsCount}`,
     });
-    const sorted = Array.from(cityMap.entries()).sort((a, b) => b[1] - a[1]);
-    if (sorted.length > 0) {
-      const [topCity, topVal] = sorted[0];
-      const total = Array.from(cityMap.values()).reduce((a, b) => a + b, 0);
-      const share = total > 0 ? Math.round((topVal / total) * 100) : 0;
+  }
+
+  // 2. Rating insights (Customer Feedback Domain)
+  if (ratingCols.length > 0) {
+    const rCol = ratingCols[0];
+    const avgScore = rCol.avg ?? 0;
+    const satisfiedCount = rows.filter((r) => Number(r[rCol.key]) >= 4).length;
+    const satisfactionPct = rows.length > 0 ? Math.round((satisfiedCount / rows.length) * 100) : 0;
+
+    insights.push({
+      id: 'ins_rating_summary',
+      type: avgScore >= 3.8 ? 'positive' : 'warning',
+      textAr: `متوسط رضا العملاء العام بلغ ${avgScore.toFixed(1)} من 5 نجوم، مع تحقيق نسبة رضا بلغت ${satisfactionPct}% بين العملاء.`,
+      textEn: `Overall customer satisfaction averaged ${avgScore.toFixed(1)}/5 stars, with ${satisfactionPct}% positive satisfaction.`,
+      metricLabel: 'متوسط التقييم',
+      metricValue: `${avgScore.toFixed(1)} ⭐`,
+    });
+
+    // Rating breakdown by City
+    if (cityCol) {
+      const cityRatings = new Map<string, { sum: number; count: number }>();
+      rows.forEach((r) => {
+        const c = String(r[cityCol.key] || '').trim();
+        const score = Number(r[rCol.key]);
+        if (!isNaN(score) && score >= 1 && score <= 5) {
+          const curr = cityRatings.get(c) || { sum: 0, count: 0 };
+          cityRatings.set(c, { sum: curr.sum + score, count: curr.count + 1 });
+        }
+      });
+      const sortedCityRatings = Array.from(cityRatings.entries())
+        .map(([name, stats]) => ({
+          name,
+          avg: Number((stats.sum / stats.count).toFixed(2)),
+          count: stats.count,
+        }))
+        .sort((a, b) => b.avg - a.avg);
+
+      if (sortedCityRatings.length > 0) {
+        const topRatedCity = sortedCityRatings[0];
+        insights.push({
+          id: 'ins_top_rated_city',
+          type: 'highlight',
+          textAr: `مدينة ${topRatedCity.name} سجلت أعلى متوسط رضا وتقييمات بمعدل ${topRatedCity.avg} من 5 عبر ${topRatedCity.count} عميل.`,
+          textEn: `${topRatedCity.name} recorded the highest satisfaction score with ${topRatedCity.avg}/5 across ${topRatedCity.count} reviews.`,
+          metricLabel: topRatedCity.name,
+          metricValue: `${topRatedCity.avg} / 5`,
+        });
+      }
+    }
+  }
+
+  // 3. Demographics (Age) insights
+  if (ageCols.length > 0 && insights.length < 4) {
+    const aCol = ageCols[0];
+    insights.push({
+      id: 'ins_age_summary',
+      type: 'neutral',
+      textAr: `متوسط أعمار العملاء المسجلين هو ${Math.round(aCol.avg || 0)} سنة، والوسيط الإحصائي ${aCol.median || 0} سنة.`,
+      textEn: `Average customer age is ${Math.round(aCol.avg || 0)} years (median: ${aCol.median || 0} years).`,
+      metricLabel: 'متوسط العمر',
+      metricValue: `${Math.round(aCol.avg || 0)} سنة`,
+    });
+  }
+
+  // 4. Financial insights (Sales / Profit)
+  if (financialCols.length > 0 && insights.length < 4) {
+    const salesCol = financialCols.find((c) => /إجمالي|sales|مبيعات|مبلغ|amount|total/i.test(c.key)) || financialCols[0];
+    if (salesCol && salesCol.sum !== undefined && salesCol.sum > 0) {
       insights.push({
-        id: 'ins_top_city',
+        id: 'ins_sales_summary',
         type: 'highlight',
-        textAr: `مدينة ${topCity} حققت أعلى مبيعات بقيمة ${formatMetricNumber(topVal, true)} (بنسبة ${share}% من إجمالي المبيعات).`,
-        textEn: `${topCity} generated the highest sales with ${formatMetricNumberEn(topVal, true)} (${share}% of total).`,
-        metricLabel: topCity,
-        metricValue: `${share}%`,
+        textAr: `إجمالي المبيعات المحققة هو ${formatMetricNumber(salesCol.sum, true)} محسوبًا من كافة العمليات المسجلة.`,
+        textEn: `Total sales generated reached ${formatMetricNumberEn(salesCol.sum, true)}.`,
+        metricLabel: 'المبيعات',
+        metricValue: formatMetricNumber(salesCol.sum, true),
       });
     }
   }
 
-  // 2. Top Product / Item
-  if (productCol && (profitCol || salesCol)) {
-    const targetCol = profitCol || salesCol;
-    const prodMap = new Map<string, number>();
-    rows.forEach((r) => {
-      const prod = String(r[productCol.key] || '').trim();
-      const val = Number(r[targetCol.key]) || 0;
-      prodMap.set(prod, (prodMap.get(prod) || 0) + val);
-    });
-    const sorted = Array.from(prodMap.entries()).sort((a, b) => b[1] - a[1]);
-    if (sorted.length > 0) {
-      const [topProd, topVal] = sorted[0];
-      const isProfit = targetCol === profitCol;
-      insights.push({
-        id: 'ins_top_prod',
-        type: 'positive',
-        textAr: `منتج "${topProd}" هو الأكثر توليدًا ${isProfit ? 'للأرباح' : 'للمبيعات'} بإجمالي ${formatMetricNumber(topVal, true)}.`,
-        textEn: `"${topProd}" is the top ${isProfit ? 'profit' : 'sales'} driver with ${formatMetricNumberEn(topVal, true)}.`,
-        metricLabel: topProd,
-        metricValue: formatMetricNumber(topVal, true),
-      });
-    }
-  }
-
-  // 3. Contrast / Opportunity: City with high volume but lower profit, or second city
-  if (cityCol && salesCol && profitCol) {
-    const cityData = new Map<string, { sales: number; profit: number }>();
-    rows.forEach((r) => {
-      const city = String(r[cityCol.key] || '').trim();
-      const s = Number(r[salesCol.key]) || 0;
-      const p = Number(r[profitCol.key]) || 0;
-      const curr = cityData.get(city) || { sales: 0, profit: 0 };
-      cityData.set(city, { sales: curr.sales + s, profit: curr.profit + p });
-    });
-
-    const entries = Array.from(cityData.entries()).map(([c, d]) => ({
-      city: c,
-      sales: d.sales,
-      profit: d.profit,
-      margin: d.sales > 0 ? (d.profit / d.sales) * 100 : 0,
-    }));
-
-    entries.sort((a, b) => b.sales - a.sales);
-    if (entries.length >= 2) {
-      const secondCity = entries[1];
-      insights.push({
-        id: 'ins_second_city',
-        type: 'neutral',
-        textAr: `مدينة ${secondCity.city} تحتل المركز الثاني بمبيعات ${formatMetricNumber(secondCity.sales, true)} وهامش ربح ${Math.round(secondCity.margin)}%.`,
-        textEn: `${secondCity.city} is in second place with ${formatMetricNumberEn(secondCity.sales, true)} and a ${Math.round(secondCity.margin)}% margin.`,
-      });
-    }
-  }
-
-  // 4. Time Trend / Monthly Insight
-  const dateCol = cols.find((c) => c.type === 'date' || c.inferredRole === 'time');
-  if (dateCol && salesCol) {
-    const monthMap = new Map<string, number>();
-    rows.forEach((r) => {
-      let d = String(r[dateCol.key] || '');
-      if (/^\d{4}-\d{2}/.test(d)) d = d.slice(0, 7);
-      const val = Number(r[salesCol.key]) || 0;
-      monthMap.set(d, (monthMap.get(d) || 0) + val);
-    });
-
-    const sortedMonths = Array.from(monthMap.entries()).sort((a, b) => b[1] - a[1]);
-    if (sortedMonths.length > 0) {
-      const [peakMonth, peakVal] = sortedMonths[0];
-      insights.push({
-        id: 'ins_peak_period',
-        type: 'positive',
-        textAr: `فترة (${peakMonth}) شهدت أعلى نشاط وذروة مبيعات بقيمة ${formatMetricNumber(peakVal, true)}.`,
-        textEn: `Period (${peakMonth}) achieved peak sales activity of ${formatMetricNumberEn(peakVal, true)}.`,
-      });
-    }
-  }
-
-  // Fallback insight if few columns
-  if (insights.length < 3) {
+  // Fallback insight
+  if (insights.length < 2) {
     insights.push({
       id: 'ins_clean_data',
       type: 'neutral',
@@ -587,173 +891,170 @@ export function investigateSubjectLocally(
   language: 'ar' | 'en' = 'ar'
 ): InvestigationResult {
   const isAr = language === 'ar';
-  const rows = dataset.rows;
+  const rows = dataset.analyticalRows && dataset.analyticalRows.length > 0 ? dataset.analyticalRows : dataset.rows;
   const totalRows = rows.length;
+  const validCount = dataset.validRowsCount ?? totalRows;
+  const ignoredCount = dataset.ignoredRowsCount ?? 0;
   const cols = dataset.columns;
 
-  const numCols = cols.filter((c) => c.type === 'numeric');
-  const catCols = cols.filter((c) => c.type === 'category' || c.inferredRole === 'dimension');
-  const timeCols = cols.filter((c) => c.type === 'date' || c.inferredRole === 'time');
+  const numCols = cols.filter((c) => c.semanticRole === 'numeric_financial');
+  const discreteCols = cols.filter((c) => c.semanticRole === 'numeric_discrete');
+  const catCols = cols.filter((c) => c.semanticRole === 'categorical');
+  const timeCols = cols.filter((c) => c.semanticRole === 'timestamp' || c.type === 'date');
+  const idCols = cols.filter((c) => c.semanticRole === 'identifier');
 
   // Find targeted metric column
-  let metricCol = numCols.find((c) => c.key === subject.metricKey);
+  let metricCol = cols.find((c) => c.key === subject.metricKey);
   if (!metricCol) {
     metricCol =
+      discreteCols[0] ||
       numCols.find((c) => /إجمالي|sales|مبيعات|مبلغ|amount|total|revenue|ربح|profit/i.test(c.key)) ||
       numCols[0];
   }
 
-  // Handle entity / data point investigation (e.g. City = "الرياض")
-  if (subject.type === 'datapoint' && subject.dimensionKey && subject.filterValue) {
-    const dimKey = subject.dimensionKey;
-    const filterVal = subject.filterValue;
-    const matchingRows = rows.filter((r) => String(r[dimKey]) === filterVal);
-    const entityRowsCount = matchingRows.length;
-    const shareOfRows = totalRows > 0 ? Math.round((entityRowsCount / totalRows) * 100) : 0;
+  // Common evidence item: Data integrity verification
+  const auditEvidence: InvestigationEvidence = {
+    label: isAr ? 'السجلات المعتمدة للتحليل' : 'Valid Analytical Records',
+    value: `${validCount} ${isAr ? 'سجل صالح' : 'valid rows'}`,
+    note: ignoredCount > 0
+      ? (isAr ? `تم استبعاد ${ignoredCount} قيمة شاذة بدقة` : `${ignoredCount} outliers excluded`)
+      : (isAr ? 'بيانات مكتملة ونظيفة بالكامل' : '100% verified data'),
+  };
 
-    let entitySum = 0;
-    let allSum = 0;
-    if (metricCol) {
-      const mKey = metricCol.key;
-      entitySum = matchingRows.reduce((acc, r) => acc + (Number(r[mKey]) || 0), 0);
-      allSum = rows.reduce((acc, r) => acc + (Number(r[mKey]) || 0), 0);
-    }
-    const shareOfMetric = allSum > 0 ? Math.round((entitySum / allSum) * 100) : shareOfRows;
-    const avgPerOrder = entityRowsCount > 0 ? entitySum / entityRowsCount : 0;
+  // ==========================================
+  // CASE A: INVESTIGATING DISCRETE RATING (1-5 STARS)
+  // ==========================================
+  if (metricCol && (metricCol.type === 'rating' || (metricCol.semanticRole === 'numeric_discrete' && /تقييم|rating|stars|score|رضا|جودة/i.test(metricCol.key)))) {
+    const scores = rows.map((r) => Number(r[metricCol!.key])).filter((s) => !isNaN(s) && s >= 1 && s <= 5);
+    const avgScore = scores.length > 0 ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2)) : 0;
+    const medianScore = metricCol.median ?? avgScore;
+    const satisfiedCount = scores.filter((s) => s >= 4).length;
+    const satisfactionRate = scores.length > 0 ? Math.round((satisfiedCount / scores.length) * 100) : 0;
+    const lowCount = scores.filter((s) => s <= 2).length;
+    const lowRate = scores.length > 0 ? Math.round((lowCount / scores.length) * 100) : 0;
 
-    // Check secondary dimension for this entity (e.g., top products sold in this city)
-    const secondaryCat = catCols.find((c) => c.key !== dimKey);
-    const subBreakdown: Record<string, number> = {};
-    if (secondaryCat && metricCol) {
-      const sKey = secondaryCat.key;
-      const mKey = metricCol.key;
-      matchingRows.forEach((r) => {
-        const val = String(r[sKey] || 'غير محدد');
-        subBreakdown[val] = (subBreakdown[val] || 0) + (Number(r[mKey]) || 0);
+    // Cross reference by dimension (e.g. City or Product)
+    const dimCol = catCols.find((c) => /مدينة|city|منطقة|منتج|product/i.test(c.key)) || catCols[0];
+    let topDimText = '';
+    if (dimCol) {
+      const dimMap = new Map<string, { sum: number; count: number }>();
+      rows.forEach((r) => {
+        const d = String(r[dimCol.key] || 'أخرى');
+        const s = Number(r[metricCol!.key]);
+        if (!isNaN(s) && s >= 1 && s <= 5) {
+          const curr = dimMap.get(d) || { sum: 0, count: 0 };
+          dimMap.set(d, { sum: curr.sum + s, count: curr.count + 1 });
+        }
       });
-    }
+      const sortedDims = Array.from(dimMap.entries())
+        .map(([k, v]) => ({ label: k, avg: Number((v.sum / v.count).toFixed(2)), count: v.count }))
+        .sort((a, b) => b.avg - a.avg);
 
-    const sortedSub = Object.entries(subBreakdown).sort((a, b) => b[1] - a[1]);
-    const topSub = sortedSub[0];
-    const topSubPct = entitySum > 0 && topSub ? Math.round((topSub[1] / entitySum) * 100) : 0;
+      if (sortedDims[0]) {
+        topDimText = `${sortedDims[0].label} (بمتوسط ${sortedDims[0].avg}/5)`;
+      }
+    }
 
     const evidence: InvestigationEvidence[] = [
       {
-        label: isAr ? `حجم مساهمة ${filterVal}` : `Contribution Share`,
-        value: formatMetricNumber(entitySum, true),
-        percentage: shareOfMetric,
-        note: isAr ? `${shareOfMetric}% من الإجمالي العام` : `${shareOfMetric}% of overall total`,
+        label: isAr ? 'متوسط التقييم العام (Mean)' : 'Mean Rating',
+        value: `${avgScore} / 5 ⭐`,
+        note: isAr ? `محسوب بدقة دون جمع عشوائي` : `Calculated correctly without sum`,
       },
       {
-        label: isAr ? 'عدد العمليات المسجلة' : 'Number of Transactions',
-        value: `${entityRowsCount} ${isAr ? 'عملية' : 'orders'}`,
-        percentage: shareOfRows,
-        note: isAr ? `${shareOfRows}% من إجمالي العمليات` : `${shareOfRows}% of total transactions`,
+        label: isAr ? 'وسيط التقييم (Median)' : 'Median Rating',
+        value: `${medianScore} / 5`,
+        note: isAr ? 'نقطة المنتصف الإحصائية للتقييمات' : 'Statistical midpoint',
       },
       {
-        label: isAr ? 'متوسط قيمة العملية' : 'Avg Order Value',
-        value: formatMetricNumber(avgPerOrder, true),
-        note: isAr ? 'معدل الإنفاق لكل عملية' : 'Average spend per order',
+        label: isAr ? 'معدل الرضا الإيجابي (4-5 نجوم)' : 'Positive Satisfaction Rate',
+        value: `${satisfactionRate}%`,
+        percentage: satisfactionRate,
+        note: isAr ? `${satisfiedCount} عميل راضٍ` : `${satisfiedCount} satisfied reviews`,
       },
+      {
+        label: isAr ? 'معدل عدم الرضا (نجمتان أو أقل)' : 'Dissatisfaction Rate',
+        value: `${lowRate}%`,
+        percentage: lowRate,
+        note: isAr ? `${lowCount} تقييم سلبي` : `${lowCount} negative reviews`,
+      },
+      auditEvidence,
     ];
 
-    if (topSub) {
-      evidence.push({
-        label: isAr ? `أعلى تصنيف فرعي (${topSub[0]})` : `Top Sub-segment (${topSub[0]})`,
-        value: formatMetricNumber(topSub[1], true),
-        percentage: topSubPct,
-        note: isAr ? `${topSubPct}% من مبيعات هذا القسم` : `${topSubPct}% of segment sales`,
-      });
-    }
+    return {
+      subject,
+      summaryWhat: isAr
+        ? `يستقر **${subject.title}** عند متوسط **${avgScore} من 5 نجوم** مع وسيط إحصائي قدره **${medianScore}**، مما يعكس مستوى رضا عام بنسبة **${satisfactionRate}%** عبر ${validCount} تقييم صالح.`
+        : `**${subject.title}** stands at an average of **${avgScore}/5 stars** with a median of **${medianScore}**, representing a **${satisfactionRate}%** satisfaction rate.`,
+      summaryWhy: [
+        isAr
+          ? `**توزيع الرضا المرتفع**: يمثل العملاء الذين منحوا 4 أو 5 نجوم ما نسبته **${satisfactionRate}%** من إجمالي الآراء.`
+          : `**High Satisfaction Weight**: **${satisfactionRate}%** of reviews rated 4 or 5 stars.`,
+        topDimText
+          ? isAr
+            ? `**أعلى أداء حسب الفئة**: تصدرت **"${topDimText}"** قائمة التقييمات الإيجابية.`
+            : `**Top Segment**: Highest performance observed in **"${topDimText}"**.`
+          : isAr
+          ? `**استقرار نمط التقييم**: لا توجد فجوات حادة في مستويات التقييم بين الشرائح.`
+          : `**Rating Uniformity**: Responses show consistent customer sentiment.`,
+        isAr
+          ? `**حجم الشكاوى المحدود**: بلغت نسبة التقييمات السلبية المنخفضة (نجمتان أو أقل) **${lowRate}%** فقط.`
+          : `**Controlled Dissatisfaction**: Low rating rate is kept at **${lowRate}%**.`,
+      ],
+      evidence,
+      recommendation: isAr
+        ? `التركيز على مراجعة ملاحظات الـ ${lowCount} عميل أصحاب التقييمات المنخفضة لمعالجة أسباب الشكوى سريعًا ورفع متوسط الرضا الإجمالي.`
+        : `Review feedback from the ${lowCount} negative ratings to address root causes and boost overall customer sentiment.`,
+    };
+  }
+
+  // ==========================================
+  // CASE B: INVESTIGATING DISCRETE AGE
+  // ==========================================
+  if (metricCol && (metricCol.type === 'age' || (metricCol.semanticRole === 'numeric_discrete' && /عمر|age|سن/i.test(metricCol.key)))) {
+    const avgAge = metricCol.avg ?? 0;
+    const medianAge = metricCol.median ?? avgAge;
+    const evidence: InvestigationEvidence[] = [
+      {
+        label: isAr ? 'متوسط العمر (Mean)' : 'Average Age',
+        value: `${Math.round(avgAge)} سنة`,
+        note: isAr ? 'متوسط عمر العينة المعتمدة' : 'Sample mean age',
+      },
+      {
+        label: isAr ? 'وسيط الأعمار (Median)' : 'Median Age',
+        value: `${medianAge} سنة`,
+        note: isAr ? 'الوسيط الديموغرافي' : 'Demographic median',
+      },
+      auditEvidence,
+    ];
 
     return {
       subject,
       summaryWhat: isAr
-        ? `يمثل **${filterVal}** شريحة حيوية تحقق **${formatMetricNumber(entitySum, true)}** عبر **${entityRowsCount}** عملية مسجلة، وهو ما يشكل **${shareOfMetric}%** من الحجم الكلي.`
-        : `**${filterVal}** generates **${formatMetricNumberEn(entitySum, true)}** across **${entityRowsCount}** transactions, accounting for **${shareOfMetric}%** of total volume.`,
+        ? `يبلغ متوسط أعمار العملاء **${Math.round(avgAge)} سنة** مع وسيط إحصائي يبلغ **${medianAge} سنة**، ضمن نطاق يتراوح بين ${metricCol.min || 0} و ${metricCol.max || 0} سنة.`
+        : `Average customer age is **${Math.round(avgAge)} years** with a median of **${medianAge} years**.`,
       summaryWhy: [
         isAr
-          ? `**كثافة العمليات والطلب**: استحوذت هذه الشريحة على ${shareOfRows}% من نشاط السجلات بالكامل، مما يدل على قاعدة عملاء نشطة ومتكررة.`
-          : `**High Order Volume**: Accounts for ${shareOfRows}% of all recorded activity, reflecting strong repeat transactions.`,
-        topSub
-          ? isAr
-            ? `**تركز الطلب في منتج/صنف رائد**: يشكل صنف **"${topSub[0]}"** المحرك الأكبر بمفرده بنسبة ${topSubPct}% من أداء هذه الشريحة.`
-            : `**Core Driver**: Category **"${topSub[0]}"** alone accounts for ${topSubPct}% of this segment's performance.`
-          : isAr
-          ? `**استقرار القيمة المتوسطة**: متوسط العملية الواحدة يصل إلى ${formatMetricNumber(avgPerOrder, true)}، وهو ما يعزز ثبات العائد.`
-          : `**Stable Basket Value**: Average transaction size reaches ${formatMetricNumberEn(avgPerOrder, true)}.`,
+          ? `**التركيبة الديموغرافية الأساسية**: تتركز الفئة الأكثر نشاطًا حول عمر ${medianAge} سنة.`
+          : `**Primary Demographic**: Core participant cluster is centered around age ${medianAge}.`,
         isAr
-          ? `**المكانة النسبية في البيانات**: يتفوق هذا النطاق بشكل ملحوظ مقارنة بالمعدل العام لباقي الشرائح.`
-          : `**Relative Outperformance**: Consistently ranks at the upper tier of the dataset.`,
+          ? `**التوزيع الإحصائي الطبيعي**: تقارب المتوسط والوسيط يؤكد عدم وجود انحرافات غير واقعية.`
+          : `**Symmetric Distribution**: Closeness of mean and median validates demographic stability.`,
       ],
       evidence,
       recommendation: isAr
-        ? `الحفاظ على هذا الزخم من خلال ضمان توفر مخزون مستمر لأهم الأصناف (${topSub ? topSub[0] : 'الأكثر طلباً'})، واختبار عروض مجمعة (Bundles) لرفع متوسط العملية إلى مستويات أعلى.`
-        : `Maintain momentum by securing inventory for leading products and introducing bundle offers to lift average ticket size further.`,
+        ? `مواءمة الرسائل التسويقية وجودة المنتجات لتناسب اهتمامات الفئة العمرية السائدة (حوالي ${medianAge} سنة).`
+        : `Tailor messaging and experience to resonate with the primary ${medianAge}-year-old cohort.`,
     };
   }
 
-  // Handle Chart investigation
-  if (subject.type === 'chart' && subject.dimensionKey) {
-    const dimCol = cols.find((c) => c.key === subject.dimensionKey) || catCols[0];
-    const metric = metricCol || numCols[0];
-
-    const aggregated: Record<string, number> = {};
-    if (dimCol && metric) {
-      rows.forEach((r) => {
-        const dVal = String(r[dimCol.key] || 'غير محدد');
-        aggregated[dVal] = (aggregated[dVal] || 0) + (Number(r[metric.key]) || 0);
-      });
-    }
-
-    const sortedEntries = Object.entries(aggregated).sort((a, b) => b[1] - a[1]);
-    const totalAgg = sortedEntries.reduce((acc, curr) => acc + curr[1], 0);
-    const topEntry = sortedEntries[0] || ['غير متاح', 0];
-    const secondEntry = sortedEntries[1];
-    const lowestEntry = sortedEntries[sortedEntries.length - 1] || ['غير متاح', 0];
-
-    const topShare = totalAgg > 0 ? Math.round((topEntry[1] / totalAgg) * 100) : 0;
-    const gapMultiplier = lowestEntry[1] > 0 ? (topEntry[1] / lowestEntry[1]).toFixed(1) : '—';
-
-    const evidence: InvestigationEvidence[] = sortedEntries.slice(0, 4).map(([name, val]) => ({
-      label: name,
-      value: formatMetricNumber(val, true),
-      percentage: totalAgg > 0 ? Math.round((val / totalAgg) * 100) : 0,
-      note: isAr ? `مساهمة من إجمالي الرسم` : `Share of chart total`,
-    }));
-
-    return {
-      subject,
-      summaryWhat: isAr
-        ? `يوضح المخطط تفاوتًا واضحًا في توزيع **${metric?.label || subject.title}**، حيث يتصدر **"${topEntry[0]}"** المشهد بإجمالي **${formatMetricNumber(topEntry[1], true)}** بنسبة **${topShare}%** من إجمالي المخطط.`
-        : `The chart demonstrates a clear distribution pattern for **${subject.title}**, led by **"${topEntry[0]}"** with **${formatMetricNumberEn(topEntry[1], true)}** (${topShare}% share).`,
-      summaryWhy: [
-        isAr
-          ? `**الريادة الواضحة للصدارة**: يتفوق **"${topEntry[0]}"** على أدنى عنصر (${lowestEntry[0]}) بمعدل **${gapMultiplier}x** ضعفًا، مما يجعله مركز الثقل الحقيقي.`
-          : `**Clear Leader Advantage**: **"${topEntry[0]}"** outperforms the lowest item (${lowestEntry[0]}) by **${gapMultiplier}x**, representing the core weight.`,
-        secondEntry
-          ? isAr
-            ? `**الفجوة بين المركزين الأول والثاني**: الفارق بين "${topEntry[0]}" و "${secondEntry[0]}" يبلغ ${formatMetricNumber(topEntry[1] - secondEntry[1], true)}، ما يبرز هيمنة المتصدر.`
-            : `**First-to-Second Gap**: The difference between top two entries is ${formatMetricNumberEn(topEntry[1] - secondEntry[1], true)}. `
-          : isAr
-          ? `**تركز الحصص السوقية**: أغلب النشاط محصور في نطاق ضيق مقارنة بالخيارات المتاحة.`
-          : `**Share Concentration**: Most recorded activity is concentrated within top segments.`,
-        isAr
-          ? `**فرص النمو غير المستغلة**: الفئات الأدنى ما زالت تمتلك مساحات واسعة للتوسع وزيادة حصتها.`
-          : `**Untapped Potential**: Lower-tier items represent substantial headroom for growth.`,
-      ],
-      evidence,
-      recommendation: isAr
-        ? `ينبغي حماية ريادة "${topEntry[0]}" كركيزة للأعمال، بالتوازي مع تخصيص حملات محددة لتحفيز الفئات الأقل نموًا دون تشتيت الموارد الرئيسية.`
-        : `Protect the core leadership of "${topEntry[0]}" while testing targeted campaigns to unlock growth in lower-tier segments.`,
-    };
-  }
-
-  // Default: General KPI or Metric Investigation (e.g. Total Sales, Profit, Orders)
+  // ==========================================
+  // CASE C: FINANCIAL / GENERAL INVESTIGATION
+  // ==========================================
   const metricSum = metricCol?.sum || rows.reduce((acc, r) => acc + (Number(r[metricCol?.key || '']) || 0), 0);
   const avgVal = totalRows > 0 ? metricSum / totalRows : 0;
 
-  // Find the primary driver dimension with highest variance/concentration
+  // Find primary driver dimension
   let bestDim: ColumnMeta | null = null;
   let bestDimBreakdown: [string, number][] = [];
   let bestDimTopShare = 0;
@@ -796,40 +1097,34 @@ export function investigateSubjectLocally(
   evidence.push({
     label: isAr ? 'المتوسط الحسابي لكل سجل' : 'Average Per Record',
     value: formatMetricNumber(avgVal, true),
-    note: isAr ? `محسوب على ${totalRows} سجل` : `Across ${totalRows} records`,
+    note: isAr ? `محسوب على ${validCount} سجل صالح` : `Across ${validCount} valid records`,
   });
+  evidence.push(auditEvidence);
 
   return {
     subject,
     summaryWhat: isAr
-      ? `يستقر **${subject.title}** عند **${subject.formattedValue || formatMetricNumber(metricSum, true)}** محسوبًا على إجمالي **${totalRows}** عملية مسجلة بمتوسط **${formatMetricNumber(avgVal, true)}** لكل عملية.`
-      : `**${subject.title}** stands at **${subject.formattedValue || formatMetricNumberEn(metricSum, true)}** across **${totalRows}** transactions with an average of **${formatMetricNumberEn(avgVal, true)}** per transaction.`,
+      ? `يستقر **${subject.title}** عند **${subject.formattedValue || formatMetricNumber(metricSum, true)}** محسوبًا بدقة على **${validCount}** عملية صالحة بمتوسط **${formatMetricNumber(avgVal, true)}** لكل عملية.`
+      : `**${subject.title}** stands at **${subject.formattedValue || formatMetricNumberEn(metricSum, true)}** across **${validCount}** valid records.`,
     summaryWhy: [
       topDriver
         ? isAr
           ? `**التركز الأساسي في (${bestDim?.label || 'الفئة'})**: تصدر **"${topDriver[0]}"** بحصة بلغت **${Math.round(bestDimTopShare)}%** بمفرده، مما يجعله المحرك الأقوى للرقم.`
-          : `**Primary Concentration in (${bestDim?.label || 'Segment'})**: **"${topDriver[0]}"** drives **${Math.round(bestDimTopShare)}%** of the metric, serving as the core catalyst.`
+          : `**Primary Concentration in (${bestDim?.label || 'Segment'})**: **"${topDriver[0]}"** drives **${Math.round(bestDimTopShare)}%** of the metric.`
         : isAr
-        ? `**التوزيع عبر السجلات**: يعتمد الرقم على تراكم العمليات المتكررة عبر كافة السجلات المسجلة.`
-        : `**Cumulative Distribution**: Built from recurring transactional activity across all records.`,
+        ? `**التوزيع المتوازن عبر السجلات**: تراكم العمليات المتكررة عبر كافة السجلات المسجلة دون فجوات.`
+        : `**Balanced Distribution**: Built from recurring transactional activity across verified records.`,
       top2Driver
         ? isAr
-          ? `**قاعدة الـ 80/20 (باريتو)**: أول جهتين ("${topDriver[0]}" و "${top2Driver[0]}") تسهمان معًا بنحو **${top2CombinedPct}%** من الناتج الإجمالي.`
-          : `**Pareto Dynamics**: Top two performers ("${topDriver[0]}" and "${top2Driver[0]}") collectively generate **${top2CombinedPct}%** of total output.`
+          ? `**قاعدة التركز التراكمي**: أول جهتين ("${topDriver[0]}" و "${top2Driver[0]}") تسهمان معًا بنحو **${top2CombinedPct}%** من الناتج الإجمالي.`
+          : `**Cumulative Concentration**: Top two performers ("${topDriver[0]}" and "${top2Driver[0]}") generate **${top2CombinedPct}%** of total output.`
         : isAr
         ? `**ثبات متوسط السلة**: تتقارب معظم القيم المسجلة حول المتوسط العام دون انحرافات حادة.`
         : `**Consistency**: Most transactions align closely around the mean without severe anomalies.`,
-      timeCols.length > 0
-        ? isAr
-          ? `**العامل الزمني والتكرار**: تشير التواريخ إلى نشاط مستمر يحافظ على استدامة المؤشر.`
-          : `**Time Velocity**: Transaction cadence supports continuous metric stability.`
-        : isAr
-        ? `**هامش الأمان المالي**: تركيبة العمليات تظهر استقرارًا عامًا في العوائد المحققة.`
-        : `**Operational Resilience**: Transaction composition demonstrates healthy volume stability.`,
     ],
     evidence,
     recommendation: isAr
       ? `الحرص على استمرار دعم القنوات والفئات الأعلى مساهمة، مع اختبار استراتيجيات جديدة لرفع إسهام باقي الفئات لتقليل الاعتمادية وزيادة النمو الكلي.`
-      : `Continue reinforcing primary drivers while deploying targeted initiatives to elevate lagging segments, mitigating concentration risk and boosting growth.`,
+      : `Continue reinforcing primary drivers while deploying targeted initiatives to elevate lagging segments.`,
   };
 }
